@@ -159,30 +159,15 @@ def chebyshev(f, W, ideal_point, max_point):
 def ei_cheb_aux(sample_values, weights, ideal_point, max_point, TCH_min):
     """
     This helper function handles the creation of the samples around each point. It computes EI over Tchebycheff
-
-
-
     mu: mean vector
     sigma: vector of variances
     """
     n_samples = len(sample_values)
 
-
-    # y1_samples = np.random.normal(mu[0], sigma[0], size=n_samples)
-    # y2_samples = np.random.normal(mu[1], sigma[1], size=n_samples)
-
-
-    # samples = np.asarray(list(zip(y1_samples,y2_samples)))
-
-    # total = (sum([chebyshev(x, weights, ideal_point, max_point) for x in samples]))/30
-
     TCHs = np.asarray([chebyshev(x, weights, ideal_point, max_point) for x in np.asarray(sample_values)])
 
-    # import pdb; pdb.set_trace()
 
     total = np.mean(np.maximum(np.zeros((n_samples,1)), TCH_min - TCHs ))
-    # print(total)
-
     return total
 
 def EITCH(X, models, weights, ideal_point, max_point, min_tch, cache):
@@ -203,14 +188,8 @@ def EITCH(X, models, weights, ideal_point, max_point, min_tch, cache):
 
     mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
     sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
-    # print(mu)
-    # print(sigma)
 
-    # import pdb; pdb.set_trace()
     sample_values = change(predicitions, cache)
-
-    
-    
     return ei_cheb_aux(sample_values, weights, ideal_point, max_point, min_tch)
 
 
@@ -248,25 +227,6 @@ def EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min):
     sigma: vector of variances
     """
     n_samples = len(sample_values)
-    # Now we need to decide how the weights are decided, random weights?
-    # Also ideal point needs to be decided
-
-    # for said point sample the normal distributions
-    # y1_samples = []
-    # y2_samples = []
-    # for i in range(n_samples):
-    #     y1 = np.random.normal(mu[0], sigma[0])
-    #     y2 = np.random.normal(mu[1], sigma[1])
-    #     y1_samples.append(y1)
-    #     y2_samples.append(y2)
-
-    # y1_samples = np.random.normal(mu[0], sigma[0], size=n_samples)
-    # y2_samples = np.random.normal(mu[1], sigma[1], size=n_samples)
-
-    # print(y1_samples)
-    # print(y2_samples)
-
-    # samples = np.asarray(list(zip(y1_samples,y2_samples)))
 
     # PBI values of all the points sampled from the distribution.
     PBIs = np.asarray([PBI(x, weights, ideal_point, max_point) for x in sample_values])
