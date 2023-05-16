@@ -10,7 +10,7 @@ from pymoo.indicators.hv import HV
 from pymoo.core.problem import ElementwiseProblem
 
 
-from util_functions import EHVI, calc_pf, chebyshev, PBI, EIPBI, EITCH, expected_decomposition
+from util_functions import EHVI, calc_pf, EIPBI, EITCH, expected_decomposition
 from scalarisations import ExponentialWeightedCriterion, IPBI, PBI, chebyshev, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff, chebyshev
 
 
@@ -111,10 +111,11 @@ class MultiSurrogateOptimiser:
 
             # Retrieve the next sample point.
             X_next = None
-
-            min_scalar =  np.min([acquisition_func(y, ref_dir) for y in ysample])
-
-            X_next, _, _ = self._get_proposed_scalarisation(expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
+            if acquisition_func is None:
+                X_next, _, = self._get_proposed_EHVI(EHVI, models, self.ideal_point, self.max_point, ysample, cached_samples)
+            else:
+                min_scalar =  np.min([acquisition_func(y, ref_dir) for y in ysample])
+                X_next, _, _ = self._get_proposed_scalarisation(expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
 
 
             # expected_decomposition([1,1], models, ref_dir, acquisition_func, min_scalar, cached_samples)
@@ -315,6 +316,5 @@ class MonoSurrogateOptimiser:
         pf_inputs = Xsample[indicies]
 
         return pf_approx, pf_inputs, ysample, Xsample
-
 
 
