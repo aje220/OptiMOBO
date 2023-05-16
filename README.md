@@ -21,6 +21,10 @@ The output `results` is a tuple containing:
 * All evaluated solutions.
 * All inputs used in the search.
 
+#### Features
+* Plotting of Pareto front approximation
+* EITCH, EIPBI, EHVI, mulit-objective acquisition functions.
+
 #### Requirements
 * Numpy
 * Scipy
