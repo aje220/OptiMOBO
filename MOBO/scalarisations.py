@@ -208,6 +208,9 @@ class chebyshev(Scalarisation):
 
 
 
+
+
+###################################################################################
 # nx, ny = (75, 75)
 # # x = np.linspace(-1.76, 3, nx)
 # # y = np.linspace(-1.9, 3, ny)
@@ -217,19 +220,8 @@ class chebyshev(Scalarisation):
 # obj = list(zip(xv.flatten(), yv.flatten()))
 # obj = np.asarray([list(i) for i in obj])
 
-# # plt.plot(xv, yv, marker='o', color='k', linestyle='none')
+# import pdb; pdb.set_trace()
 
-# # plt.show()
-
-
-
-# # import pdb; pdb.set_trace()
-
-
-
-
-
-# # cheb_outputs = np.reshape(cheb_outputs, (len(obj[:,0]), len(obj[:,1])))
 # fig, axs = plt.subplots(2,5, sharex=True, sharey=True)
 # fig.supxlabel(r'$f_1(x)$')
 # fig.supylabel(r'$f_2(x)$')
@@ -237,119 +229,57 @@ class chebyshev(Scalarisation):
 # dec = IPBI([0,0], [1,1])
 # cheb_outputs = [dec(i, [0.5,0.5]) for i in obj]
 # axs[0,0].scatter(obj[:,0], obj[:,1], c=cheb_outputs)
-# axs[0,0].set_xlabel('(a)')
+# axs[0,0].set_xlabel('IPBI')
+# print(dec(obj[5], [0.5,0.5]))
 
 # dec = WeightedNorm()
 # cheb_outputs = [dec(i, np.asarray([0.5,0.5])) for i in obj]
 # axs[0,1].scatter(obj[:,0], obj[:,1], c=cheb_outputs)
-# axs[0,1].set_xlabel('(a)')
+# axs[0,1].set_xlabel('WN')
+# print(dec(obj[5], [0.5,0.5]))
 
 
 # dec = WeightedPower()
 # cheb_outputs = [dec(i, np.asarray([0.5,0.5])) for i in obj]
 # axs[0,4].scatter(obj[:,0], obj[:,1], c=cheb_outputs)
-# axs[0,4].set_xlabel('(a)')
+# axs[0,4].set_xlabel('WPO')
+# print(dec(obj[5], [0.5,0.5]))
 
 # dec = WeightedProduct()
 # cheb_outputs = [dec(i, np.asarray([0.5,0.5])) for i in obj]
 # axs[1,0].scatter(obj[:,0], obj[:,1], c=cheb_outputs)
-# axs[1,0].set_xlabel('(a)')
-# # plt.show()
+# axs[1,0].set_xlabel('WPR')
+# print(dec(obj[5], [0.5,0.5]))
 
 # dec = AugmentedTchebicheff([0,0], [1,1])
 # cheb_outputs = [dec(i, np.asarray([0.5,0.5])) for i in obj]
 # axs[1,1].scatter(obj[:,0], obj[:,1], c=cheb_outputs)
-# axs[1,1].set_xlabel('(a)')
+# axs[1,1].set_xlabel('ATCH')
+# print(dec(obj[5], [0.5,0.5]))
 
 # dec = ModifiedTchebicheff([0,0], [1,1])
 # cheb_outputs = [dec(i, np.asarray([0.5,0.5])) for i in obj]
 # axs[0,2].scatter(obj[:,0], obj[:,1], c=cheb_outputs)
-# axs[0,2].set_xlabel('(a)')
+# axs[0,2].set_xlabel('MTCH')
+# print(dec(obj[5], [0.5,0.5]))
 
 # dec = PBI([0,0], [1,1])
 # cheb_outputs = [dec(i, np.asarray([0.5,0.5])) for i in obj]
 # axs[1,2].scatter(obj[:,0], obj[:,1], c=cheb_outputs)
-# axs[1,2].set_xlabel('(a)')
+# axs[1,2].set_xlabel('PBI')
+# print(dec(obj[5], [0.5,0.5]))
 
 # dec = ExponentialWeightedCriterion(p=1)
 # cheb_outputs = [dec(i, np.asarray([0.5,0.5])) for i in obj]
 # axs[1,3].scatter(obj[:,0], obj[:,1], c=cheb_outputs)
-# axs[1,3].set_xlabel('(a)')
+# axs[1,3].set_xlabel('EWC')
+# print(dec(obj[5], np.asarray([0.5,0.5])))
 
 # dec = chebyshev([0,0],[1,1])
 # cheb_outputs = [dec(i, np.asarray([0.5,0.5])) for i in obj]
 # axs[0,3].scatter(obj[:,0], obj[:,1], c=cheb_outputs)
-# axs[0,3].set_xlabel('(a)')
-
-
-
-
+# axs[0,3].set_xlabel('TCH')
+# print(dec(obj[5], [0.5,0.5])[0])
 # plt.show()
 
-# PBI_outputs = [calculate_PBI(np.asarray([0.5,0.5]), i, np.asarray([-1.76,-1.9])) for i in obj]
-# PBI_outputs = [calculate_PBI(np.asarray([0.5,0.5]), i, np.asarray([0,0])) for i in obj]
-
-# # PBI_outputs = [PBI(i, 2) for i in obj]
-# import pdb; pdb.set_trace()
-# # plt.subplot(2,2,2)
-# axs[0,1].scatter(obj[:,0], obj[:,1], c=PBI_outputs)
-# axs[0,1].set_xlabel('(b)')
-# # plt.show()
-
-
-# plt.subplot(2,2,3)
-# from pymoo.decomposition.tchebicheff import Tchebicheff
-
-# dm = Tchebicheff()
-# axs[1,0].scatter(obj[:,0], obj[:,1], c=dm(obj, [0.5,0.5]))
-# axs[1,0].set_xlabel('(c)')
-
-
-
-
-# from pymoo.decomposition.pbi import PBI
-
-# dm = PBI(eps=0.0, theta=5)
-# # plt.subplot(2,2,4)
-
-# axs[1,1].scatter(obj[:,0], obj[:,1], c=dm(obj, [0.5,0.5]))
-# axs[1,1].set_xlabel('(d)')
-# plt.show()
-
-# def flatten(l):
-#     return [item for sublist in l for item in sublist]
-
-# # APD_outputs = [APD_new_new(i, 2) for i in obj]
-# APD_outputs, indices = APD_pymoo(obj)
-# # vects = sum([np.shape(APD_outputs[i])[0] for i in range(len(APD_outputs))])
-# # APD_outputs = [apd_new(i) for i in obj]
-# outs = [list(APD_outputs[i]) for i in range(len(APD_outputs))]
-
-# outs2 = flatten(outs)
-
-# indices2 = flatten(indices) 
-
-# lst = [None] * 5625
-
-# for i in indices2:
-#     # import pdb; pdb.set_trace()
-#     lst[i] = outs2[i]
-
-# print(lst)
-
-
-
-
-
-
-
-# import pdb; pdb.set_trace()
-# # plt.subplot(1,2,2)
-# # plt.scatter(obj[:,0], obj[:,1], c=APD_outputs)
-# plt.scatter(obj[:,0], obj[:,1], c=lst)
-
-# plt.show()
-
-# plt.scatter(obj[:,0], obj[:,1], c=outs2)
-
-# plt.show()
+#####################################################################################

@@ -140,7 +140,11 @@ def change(predicitions, samples):
     scaled_samples2 = samples[:,1] * sigma2 + mu2
     
 
-    return list(zip(scaled_samples1, scaled_samples2))
+    # return list(map(np.asarray, zip(scaled_samples1, scaled_samples2)))
+    return np.stack((scaled_samples1,scaled_samples2), axis = 1)
+
+    # return list(zip(scaled_samples1, scaled_samples2))
+
 
 ################################################################################
 """
@@ -293,3 +297,6 @@ def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache
 
     return total
 
+
+
+# print(expected_decomposition(X, models, weights, agg_func, agg_function_min, cache))

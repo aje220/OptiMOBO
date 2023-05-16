@@ -10,8 +10,9 @@ from pymoo.indicators.hv import HV
 from pymoo.core.problem import ElementwiseProblem
 
 
-from util_functions import EHVI, calc_pf, chebyshev, PBI, EIPBI, EITCH
+from util_functions import EHVI, calc_pf, chebyshev, PBI, EIPBI, EITCH, expected_decomposition
 from scalarisations import ExponentialWeightedCriterion, IPBI, PBI, chebyshev, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff, chebyshev
+
 
 class MultiSurrogateOptimiser:
     """
@@ -33,12 +34,14 @@ class MultiSurrogateOptimiser:
         return problem.evaluate(x)
 
     
-    def _get_proposed(self, function, models, ideal_point, max_point, min_val, ref_dir, cache):
+    def _get_proposed_scalarisation(self, function, models, min_val, scalar_func, ref_dir, cache):
+        # def _get_proposed_scalarisation(self, X, models, weights, agg_func, agg_function_min, cache)
         """
         Function to retieve the next sample point.
         """
         def obj(X):
-            return -function(X, models, ref_dir, ideal_point, max_point, min_val, cache)
+            # return -function(X, models, ref_dir, ideal_point, max_point, min_val, cache)
+            return -function(X, models, ref_dir, scalar_func, min_val, cache)
 
         x = list(zip(self.lower, self.upper))
         res = differential_evolution(obj, x)
@@ -61,7 +64,7 @@ class MultiSurrogateOptimiser:
 
 
     
-    def solve(self, n_iterations=100, display_pareto_front=False, n_init_samples=5, acquisition_func="_TCH_"):
+    def solve(self, n_iterations=100, display_pareto_front=False, n_init_samples=5, acquisition_func=None):
         """
         This function attempts to solve the multi-objective optimisation problem.
 
@@ -104,21 +107,35 @@ class MultiSurrogateOptimiser:
                 models.append(model)
 
             # With each iteration we select a random weight vector, this is to improve diversity.
-            ref_dir = ref_dirs[np.random.randint(0,len(ref_dirs))]
+            ref_dir = np.asarray(ref_dirs[np.random.randint(0,len(ref_dirs))])
 
             # Retrieve the next sample point.
             X_next = None
-            if acquisition_func in {"_TCH_"}:
-                TCH_min = np.min([chebyshev(y, ref_dir, self.ideal_point, self.max_point) for y in ysample])
-                X_next, _, _ = self._get_proposed(EITCH, models, self.ideal_point, self.max_point, TCH_min, ref_dir, cached_samples)
-            elif acquisition_func in {"_PBI_"}:
-                PBI_min = np.min([PBI(y, ref_dir, self.ideal_point, self.max_point) for y in ysample])
-                X_next, _, ref_dir = self._get_proposed(EIPBI, models, self.ideal_point, self.max_point, PBI_min, ref_dir, cached_samples)
-            elif acquisition_func in {"_EHVI_"}:
-                X_next, _ = self._get_proposed_EHVI(EHVI, models, self.ideal_point, self.max_point, ysample, cached_samples)
-            else:
-                raise(Exception())
+            # if acquisition_func in {"_TCH_"}:
+            #     TCH_min = np.min([chebyshev(y, ref_dir, self.ideal_point, self.max_point) for y in ysample])
+            #     X_next, _, _ = self._get_proposed(EITCH, models, self.ideal_point, self.max_point, TCH_min, ref_dir, cached_samples)
+            # elif acquisition_func in {"_PBI_"}:
+            #     PBI_min = np.min([PBI(y, ref_dir, self.ideal_point, self.max_point) for y in ysample])
+            #     X_next, _, ref_dir = self._get_proposed(EIPBI, models, self.ideal_point, self.max_point, PBI_min, ref_dir, cached_samples)
+            # elif acquisition_func in {"_EHVI_"}:
+            #     X_next, _ = self._get_proposed_EHVI(EHVI, models, self.ideal_point, self.max_point, ysample, cached_samples)
+            # else:
+            #     raise(Exception())
 
+            # expected_decomposition(X, models, weights, agg_func, agg_function_min, cache)
+
+            
+
+            min_scalar =  np.min([acquisition_func(y, ref_dir) for y in ysample])
+
+            # import pdb; pdb.set_trace()
+            X_next, _, _ = self._get_proposed_scalarisation(expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
+
+
+            # expected_decomposition([1,1], models, ref_dir, acquisition_func, min_scalar, cached_samples)
+
+            # expected_decomposition(X, models, weights, agg_func, agg_function_min, cache)
+            # import pdb; pdb.set_trace()
             # Evaluate the next input.
             y_next = self._objective_function(problem, X_next)
 
@@ -320,27 +337,27 @@ class MonoSurrogateOptimiser:
 
 
 
-class MyProblemm(ElementwiseProblem):
+# class MyProblemm(ElementwiseProblem):
     
-    def __init__(self):
-        super().__init__(n_var=2,
-                        n_obj=2,
-                        # n_ieq_constr=2,
-                        xl=np.array([-2,-2]),
-                        xu=np.array([2,2]))
+#     def __init__(self):
+#         super().__init__(n_var=2,
+#                         n_obj=2,
+#                         # n_ieq_constr=2,
+#                         xl=np.array([-2,-2]),
+#                         xu=np.array([2,2]))
 
-    def _evaluate(self, x, out, *args, **kwargs):
-        f1 = 100 * (x[0]**2 + x[1]**2)
-        f2 = (x[0]-1)**2 + x[1]**2
+#     def _evaluate(self, x, out, *args, **kwargs):
+#         f1 = 100 * (x[0]**2 + x[1]**2)
+#         f2 = (x[0]-1)**2 + x[1]**2
 
-        # g1 = 2*(x[0]-0.1) * (x[0]-0.9) / 0.18
-        # g2 = - 20*(x[0]-0.4) * (x[0]-0.6) / 4.8
+#         # g1 = 2*(x[0]-0.1) * (x[0]-0.9) / 0.18
+#         # g2 = - 20*(x[0]-0.4) * (x[0]-0.6) / 4.8
 
-        out["F"] = [f1, f2]
-        # out["G"] = [g1, g2]
+#         out["F"] = [f1, f2]
+#         # out["G"] = [g1, g2]
 
-prob = MyProblemm()
-optimi = MonoSurrogateOptimiser(prob, [661,12],[0,0])
+# prob = MyProblemm()
+# optimi = MultiSurrogateOptimiser(prob, [661,12],[0,0])
 
 
 # out = optimi.solve(n_iterations=50, display_pareto_front=True, n_init_samples=10, aggregation_func=ExponentialWeightedCriterion(p=1))
@@ -356,7 +373,15 @@ optimi = MonoSurrogateOptimiser(prob, [661,12],[0,0])
 
 
 
-out = optimi.solve(n_iterations=50, display_pareto_front=True, n_init_samples=10, aggregation_func=WeightedProduct())
+# out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=10, acquisition_func=ExponentialWeightedCriterion(p=1))
+# out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=10, acquisition_func=WeightedNorm())
+# out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=10, acquisition_func=WeightedPower())
+# out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=10, acquisition_func=PBI([0,0], [661,12]))
+# out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=10, acquisition_func=IPBI([0,0], [661,12]))
+# out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=10, acquisition_func=AugmentedTchebicheff([0,0], [661,12]))
+# out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=10, acquisition_func=ModifiedTchebicheff([0,0], [661,12]))
+# out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=10, acquisition_func=chebyshev([0,0], [661,12]))
+
 
 
 
