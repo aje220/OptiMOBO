@@ -261,3 +261,35 @@ def EIPBI(X, models, weights, ideal_point, max_point, PBI_min, cache):
     return EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min)
 
 
+def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache):
+    """
+    Example input 
+    """
+
+    # get some point and find its mean and std for both models
+    predicitions = []
+    for i in models:
+        # import pdb; pdb.set_trace()
+        output = i.predict(np.asarray([X]), return_std=True)
+        predicitions.append(output)
+
+    # mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
+    # sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
+    # print(mu)
+    # print(sigma)
+
+    # Translate the samples to the correct position
+    sample_values = change(predicitions, cache)
+
+    n_samples = len(sample_values)
+
+    # PBI values of all the points sampled from the distribution.
+    aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
+
+    # import pdb; pdb.set_trace()
+
+    total = np.mean(np.maximum(np.zeros((n_samples,1)), agg_function_min - aggregated_samples ))
+    # print(total)
+
+    return total
+

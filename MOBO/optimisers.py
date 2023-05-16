@@ -11,7 +11,7 @@ from pymoo.core.problem import ElementwiseProblem
 
 
 from util_functions import EHVI, calc_pf, chebyshev, PBI, EIPBI, EITCH
-from scalarisations2 import ExponentialWeightedCriterion, IPBI, PBI, chebyshev, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff, chebyshev
+from scalarisations import ExponentialWeightedCriterion, IPBI, PBI, chebyshev, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff, chebyshev
 
 class MultiSurrogateOptimiser:
     """
