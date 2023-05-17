@@ -81,6 +81,12 @@ class MultiSurrogateOptimiser:
                             options include: ExponentialWeightedCriterion, IPBI, PBI, Tchebicheff, 
                             WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff
         
+
+        Returns: Four lists in a tuple.
+            pf_approx, solution vectors on the pareto front approximation found by the optimiser.
+            pf_inputs, corresponding inputs to the values in pf_approx.
+            ysample, output objective vectors of all evaluated samples.
+            Xsample, all samples that were evaluated.
         """
         # variables/constants
         problem = self.test_problem
@@ -229,6 +235,13 @@ class MonoSurrogateOptimiser:
             aggregation_func: the aggregation function used to aggregate the objective vectors in a single scalar value. 
             Scalarisations are used. Options Include: ExponentialWeightedCriterion, IPBI, PBI, Tchebicheff, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff
             Imported from scalarisations.py
+
+        
+        Returns: Four lists in a tuple.
+            pf_approx, solution vectors on the pareto front approximation found by the optimiser.
+            pf_inputs, corresponding inputs to the values in pf_approx.
+            ysample, output objective vectors of all evaluated samples.
+            Xsample, all samples that were evaluated.
         """
         
         # ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=12)
