@@ -1,4 +1,4 @@
-# MOBO
+# OptiMOBO
 Solve multi-objective problems using multi-surrogate and mono-surrogate methods.
 
 This repo contains implementations of multi-objective bayesian optimisation (MOBO) methods. 
