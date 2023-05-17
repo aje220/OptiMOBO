@@ -195,7 +195,7 @@ class PBI(Scalarisation):
 #     PBI = PBI.reshape(-1,1)
 #     return PBI[0]
 
-class chebyshev(Scalarisation):
+class Tchebicheff(Scalarisation):
 
     def __init__(self, ideal_point, max_point) -> None:
         super().__init__()

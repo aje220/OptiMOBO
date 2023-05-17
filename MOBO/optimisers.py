@@ -11,7 +11,7 @@ from pymoo.core.problem import ElementwiseProblem
 
 
 from util_functions import EHVI, calc_pf, EIPBI, EITCH, expected_decomposition
-from scalarisations import ExponentialWeightedCriterion, IPBI, PBI, chebyshev, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff, chebyshev
+from scalarisations import ExponentialWeightedCriterion, IPBI, PBI, Tchebicheff, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff
 
 
 class MultiSurrogateOptimiser:
@@ -21,7 +21,7 @@ class MultiSurrogateOptimiser:
     Constraints not supported.
     """
 
-    def __init__(self, test_problem, max_point, ideal_point):
+    def __init__(self, test_problem, ideal_point, max_point):
         self.test_problem = test_problem
         self.max_point = max_point
         self.ideal_point = ideal_point
@@ -89,7 +89,7 @@ class MultiSurrogateOptimiser:
 
         # Create cached samples, this is to speed up computation in calculation of the acquisition functions.
         sampler = qmc.Sobol(d=2, scramble=True)
-        sample = sampler.random_base2(m=5)
+        sample = sampler.random_base2(m=10)
         norm_samples1 = norm.ppf(sample[:,0])
         norm_samples2 = norm.ppf(sample[:,1])
         cached_samples = np.asarray(list(zip(norm_samples1, norm_samples2)))
@@ -160,7 +160,7 @@ class MonoSurrogateOptimiser:
     Mono-surrogate method aggregates multiple objectives into a single scalar value, this then allows optimisation of
     a multi-objective problem with a single probabalistic model.
     """
-    def __init__(self, test_problem, max_point, ideal_point):
+    def __init__(self, test_problem, ideal_point, max_point):
         self.test_problem = test_problem
         # self.aggregation_func = aggregation_func
         self.max_point = max_point
