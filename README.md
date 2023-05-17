@@ -11,7 +11,7 @@ They are designed to solve problems that inherit from the `ElementwiseProblem` s
 
 #### Example
 The following code defines a bi-objective problem, MyProblem, and uses multi-surrogate Bayesian optimisation (utilising EHVI as an acquisition function) to solve.
-```
+```python
 import numpy as np
 from optimisers import MultiSurrogateOptimiser
 from pymoo.core.problem import ElementwiseProblem
