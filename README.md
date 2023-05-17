@@ -11,9 +11,26 @@ They are designed to solve problems that inherit from the `ElementwiseProblem` s
 
 An example of how they can be used:
 ```
+import numpy as np
+from optimisers import MultiSurrogateOptimiser
+from pymoo.core.problem import ElementwiseProblem
+
+class MyProblem(ElementwiseProblem):
+
+    def __init__(self):
+        super().__init__(n_var=2,
+                         n_obj=2,
+                         xl=np.array([-2,-2]),
+                         xu=np.array([2,2]))
+
+    def _evaluate(self, x, out, *args, **kwargs):
+        f1 = 100 * (x[0]**2 + x[1]**2)
+        f2 = (x[0]-1)**2 + x[1]**2
+        out["F"] = [f1, f2]
+
 problem = MyProblem()
-optimiser = MultiSurrogateOptimiser(problem, [661,12],[0,0])
-results = optimiser.solve(n_iterations=100, display_pareto_front=True, n_init_samples=10, acquisition_func="_PBI_")
+optimi = MultiSurrogateOptimiser(problem, [661,12], [0,0])
+out = optimi.solve(n_iterations=10, display_pareto_front=True, n_init_samples=10)
 ```
 The output `results` is a tuple containing:
 * Solutions on the Pareto front approximation.
