@@ -38,9 +38,9 @@ The output `results` is a tuple containing:
 * All evaluated solutions.
 * All inputs used in the search.
 
-#### Features
-* Plotting of Pareto front approximation
-* EITCH, EIPBI, EHVI, mulit-objective acquisition functions.
+#### Scalarisation and Acqusition options.
+The scalarisation functions in scalarisations.py can be used in `MonoSurrogateOptimiser` as aggregation functions and as acquisition functions in `MultiSurrogateOptimiser`.
+
 
 #### Requirements
 * Numpy
