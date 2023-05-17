@@ -70,10 +70,16 @@ class MultiSurrogateOptimiser:
 
         Params:
             n_iterations: the number of iterations 
+            
             display_pareto_front: bool. When set to true, a matplotlib plot will show the pareto front approximation discovered by the optimiser.
+            
             n_init_samples: the number of initial samples evaluated before optimisation occurs.
-            acquisition_function: the acqusition function used to select new sample points. Options include:
-                tchebicheff aggregation "_TCH_", PBI aggregation "_PBI_", Expected Hypervolume Improvement "_EHVI_".
+
+            acquisition_func: the acquisition function used to select the next sample points. 
+                            If left default it calls Expected Hypervolume improvement
+                            EHVI. Scalarisation functions can be used also;
+                            options include: ExponentialWeightedCriterion, IPBI, PBI, Tchebicheff, 
+                            WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff
         
         """
         # variables/constants
@@ -215,10 +221,14 @@ class MonoSurrogateOptimiser:
 
         Params:
             n_iterations: the number of iterations 
+
             display_pareto_front: bool. When set to true, a matplotlib plot will show the pareto front approximation discovered by the optimiser.
+
             n_init_samples: the number of initial samples evaluated before optimisation occurs.
-            acquisition_function: the aggregation function used to aggregate the objective vectors in a single scalar value. Options include:
-                tchebicheff aggregation "_TCH_", PBI aggregation "_PBI_".
+
+            aggregation_func: the aggregation function used to aggregate the objective vectors in a single scalar value. 
+            Scalarisations are used. Options Include: ExponentialWeightedCriterion, IPBI, PBI, Tchebicheff, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff
+            Imported from scalarisations.py
         """
         
         # ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=12)
