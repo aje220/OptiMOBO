@@ -69,43 +69,39 @@ def EHVI_2D_aux(PF,r,mu,sigma):
     EHVI = sum_total1 + sum_total2
     return EHVI
 
-
 def psi_cal(a,b,m,s):
     t = (b - m)/s
     # import pdb; pdb.set_trace()
     return s*stats.norm.pdf(t[0]) + (a - m)*stats.norm.cdf(t[0])
 
-def EHVI(X, models, ideal_point, max_point, ysample, cache):
-    # y_normed = normalize_data(ysample)
-    # import pdb; pdb.set_trace()
+def EHVI(X, models, ideal_point, max_point, PF, cache):
+    """
+    Calculate Expected hypervolume improvement of a point given the current solutions.
+    
+    Params:
+        X, solution vector
+        models, list of sklearn gaussian processes built on each objective.
+        ysample, current set of solutions
+        cache, array of samples that are translated and then evaluated.
 
-    n_samples = 1024
+    Return: 
+        The expected hypervolume improvement of the objective vector X.
+
+    """
+    # n_samples = 1024
 
     predicitions = []
     for i in models:
         output = i.predict(np.asarray([X]), return_std=True)
-        predicitions.append(output)     
-
-    # x1_samples = []
-    # x2_samples = []
-    # for i in range(n_samples):
-    #     dist1 = numpy.random.normal(predicitions[0][0][0], predicitions[0][1][0])
-    #     dist2 = numpy.random.normal(predicitions[1][0][0], predicitions[0][1][0])
-    #     x1_samples.append(dist1)
-    #     x2_samples.append(dist2)
+        predicitions.append(output)
 
 
     sample_values = change(predicitions, cache)
 
     samples_vals = np.asarray(sample_values)
-    cov = np.cov(samples_vals[:,0], samples_vals[:,1]) 
+    cov = np.cov(samples_vals[:,0], samples_vals[:,1])
 
-    # cov = np.cov([x1_samples,x2_samples])
-
-    # import pdb; pdb.set_trace()
-
-
-    PF = calc_pf(ysample)
+    # PF = calc_pf(ysample)
     r = max_point
     mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
     # sigma = np.asarray([[predicitions[0][1][0], 0],[0, predicitions[0][1][0]]])
@@ -116,8 +112,6 @@ def change(predicitions, samples):
     """
     This function takes the predictions from both models, along with some pre generated uniform random samples.
     It returns normally distributed samples with the mean in predictions and a covariance matrix given in predicitions.
-
-
     mu; vector of means
 
     sigma; covariance matrix
@@ -138,8 +132,6 @@ def change(predicitions, samples):
     # Scale and shift the normal distribution to match the desired mean and standard deviation
     scaled_samples1 = samples[:,0] * sigma1 + mu1
     scaled_samples2 = samples[:,1] * sigma2 + mu2
-    
-
     # return list(map(np.asarray, zip(scaled_samples1, scaled_samples2)))
     return np.stack((scaled_samples1,scaled_samples2), axis = 1)
 
@@ -151,8 +143,97 @@ def change(predicitions, samples):
 Scalarisation functions.
 """
 
-def chebyshev(f, W, ideal_point, max_point):
+def ei_over_decomposition(X, models, weights, agg_func, minimum_current_val, n_samples):
+    """
+    Generic function to compute the expected improvement of a point over the current best found point in the objective space.
 
+    Params:
+        X: objective vector to evaluate
+        models: a list containing sklearn gaussian processes trained on the values of each objective.
+        weights: weights for each objective.
+        agg_func: the aggregation/scalarisation function to be used as a measure of convergence.
+        minimum_current_val: best sample point according to the agg_func and the weights. 
+        n_samples: the number of samples to be taken from the combined distribution to calculate 
+                   the EI value. 
+
+    Returns:
+        float, the expected improvement of X over the minimum_current_val according to some agg_func 
+        used to measure convergence.
+    """
+
+    predicitions = []
+    for i in models:
+        # import pdb; pdb.set_trace()
+        output = i.predict(np.asarray([X]), return_std=True)
+        predicitions.append(output)
+
+    mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
+    sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
+
+    # n_samples = len(sample_values)
+    y1_samples = np.random.normal(mu[0], sigma[0], size=n_samples)
+    y2_samples = np.random.normal(mu[1], sigma[1], size=n_samples)
+
+
+    # sample_values = np.asarray(list(zip(y1_samples,y2_samples)))
+    sample_values = np.stack((y1_samples,y2_samples), axis = 1)
+    aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
+
+    total = np.mean(np.maximum(np.zeros((n_samples,1)), minimum_current_val - aggregated_samples ))
+    # print(total)
+
+    return total
+
+def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache):
+    """
+    Function to calculate the expected improvement of an objective vector. It is calculated in respect to a 
+    scalarisation/decomposition function used to measure convergence.
+
+    Params:
+        X, objective vector
+        models, list of sklearn gaussian processes trained of each of the objectives
+        weights, weights for each objective
+        agg_func, the decomposition function/aggregation function that is used as a performance 
+        measure.
+        agg_function_min, the best converged objective vector according to the weights and the 
+        aggregation function.
+        cache, the cached samples.
+
+    Returns:
+        The expected improvement of objective vector X over the current best objective vector respect 
+        to the agg_func and the weights.
+    """
+
+    # get some point and find its mean and std for both models
+    predicitions = []
+    for i in models:
+        # import pdb; pdb.set_trace()
+        output = i.predict(np.asarray([X]), return_std=True)
+        predicitions.append(output)
+
+    # mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
+    # sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
+    # print(mu)
+    # print(sigma)
+
+    # Translate the samples to the correct position
+    sample_values = change(predicitions, cache)
+
+    n_samples = len(sample_values)
+
+    # PBI values of all the points sampled from the distribution.
+    aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
+
+    # import pdb; pdb.set_trace()
+
+    total = np.mean(np.maximum(np.zeros((n_samples,1)), agg_function_min - aggregated_samples ))
+    # print(total)
+
+    return total
+
+
+def chebyshev(f, W, ideal_point, max_point):
+    
     nobjs = 2
 
     objs = [(f[i]-ideal_point[i])/(max_point[i]-ideal_point[i]) for i in range(nobjs)]
@@ -170,7 +251,6 @@ def ei_cheb_aux(sample_values, weights, ideal_point, max_point, TCH_min):
 
     TCHs = np.asarray([chebyshev(x, weights, ideal_point, max_point) for x in np.asarray(sample_values)])
 
-
     total = np.mean(np.maximum(np.zeros((n_samples,1)), TCH_min - TCHs ))
     return total
 
@@ -180,8 +260,6 @@ def EITCH(X, models, weights, ideal_point, max_point, min_tch, cache):
 
     X represents some singular multi-objective function value. This function computes the 
     expected Tchebycheff at that point.
-
-
     """
 
     # get some point and find its mean and std for both models
@@ -244,7 +322,6 @@ def EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min):
 
 def EIPBI(X, models, weights, ideal_point, max_point, PBI_min, cache):
     """
-    Example input EPBI(objective_value, models, [0.5,0.5], [-1.7,-1.9], [3,3])
     """
 
     # get some point and find its mean and std for both models
@@ -263,40 +340,4 @@ def EIPBI(X, models, weights, ideal_point, max_point, PBI_min, cache):
 
 
     return EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min)
-
-
-def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache):
-    """
-    Example input 
-    """
-
-    # get some point and find its mean and std for both models
-    predicitions = []
-    for i in models:
-        # import pdb; pdb.set_trace()
-        output = i.predict(np.asarray([X]), return_std=True)
-        predicitions.append(output)
-
-    # mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
-    # sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
-    # print(mu)
-    # print(sigma)
-
-    # Translate the samples to the correct position
-    sample_values = change(predicitions, cache)
-
-    n_samples = len(sample_values)
-
-    # PBI values of all the points sampled from the distribution.
-    aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
-
-    # import pdb; pdb.set_trace()
-
-    total = np.mean(np.maximum(np.zeros((n_samples,1)), agg_function_min - aggregated_samples ))
-    # print(total)
-
-    return total
-
-
-
 # print(expected_decomposition(X, models, weights, agg_func, agg_function_min, cache))
