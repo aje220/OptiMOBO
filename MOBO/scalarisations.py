@@ -168,33 +168,6 @@ class PBI(Scalarisation):
         return PBI[0]
 
 
-# def IPBI(f, W, ideal_point, max_point, theta):
-#     """
-#     Inverted Penalty-Boundary Intersection.
-#     """
-#     # import pdb; pdb.set_trace()
-#     objs = [(f[i]-np.asarray(ideal_point)[i])/(np.asarray(max_point)[i]-np.asarray(ideal_point)[i]) for i in range(2)]
-    
-#     # trans_f = f - f_ideal # translated objective values 
-#     # print(W)
-#     # W = [0.5,0.5]
-#     # import pdb; pdb.set_trace()
-
-#     W = np.reshape(W,(1,-1))
-#     normW = np.linalg.norm(W, axis=1) # norm of weight vectors    
-#     normW = normW.reshape(-1,1)
-#     # import pdb; pdb.set_trace()
-#     d_1 = np.sum(np.multiply(objs,np.divide(W,normW)),axis=1)
-#     d_1 = d_1.reshape(-1,1)
-    
-#     # import pdb; pdb.set_trace()
-
-#     d_2 = np.linalg.norm(objs - d_1*np.divide(W,normW),axis=1)
-#     d_1 = d_1.reshape(-1) 
-#     PBI = theta*d_2 - d_1
-#     PBI = PBI.reshape(-1,1)
-#     return PBI[0]
-
 class Tchebicheff(Scalarisation):
 
     def __init__(self, ideal_point, max_point) -> None:
