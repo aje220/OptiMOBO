@@ -74,7 +74,7 @@ def psi_cal(a,b,m,s):
     # import pdb; pdb.set_trace()
     return s*stats.norm.pdf(t[0]) + (a - m)*stats.norm.cdf(t[0])
 
-def EHVI(X, models, ideal_point, max_point, ysample, cache):
+def EHVI(X, models, ideal_point, max_point, PF, cache):
     """
     Calculate Expected hypervolume improvement of a point given the current solutions.
     
@@ -88,7 +88,7 @@ def EHVI(X, models, ideal_point, max_point, ysample, cache):
         The expected hypervolume improvement of the objective vector X.
 
     """
-    n_samples = 1024
+    # n_samples = 1024
 
     predicitions = []
     for i in models:
@@ -101,7 +101,7 @@ def EHVI(X, models, ideal_point, max_point, ysample, cache):
     samples_vals = np.asarray(sample_values)
     cov = np.cov(samples_vals[:,0], samples_vals[:,1])
 
-    PF = calc_pf(ysample)
+    # PF = calc_pf(ysample)
     r = max_point
     mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
     # sigma = np.asarray([[predicitions[0][1][0], 0],[0, predicitions[0][1][0]]])

@@ -48,14 +48,14 @@ class MultiSurrogateOptimiser:
         return res.x, res.fun, ref_dir
 
 
-    def _get_proposed_EHVI(self, function, models, ideal_point, max_point, ysample, cache):
+    def _get_proposed_EHVI(self, function, models, ideal_point, max_point, pf, cache):
         """
         Function to retrieve the next sample point using EHVI.
         This is a seperate function to _get_proposed as the parameters are different.
         
         """
         def obj(X):
-            return -function(X, models, ideal_point, max_point, ysample, cache)
+            return -function(X, models, ideal_point, max_point, pf, cache)
 
         # x = [(bounds[0], bounds[1])] * n_var
         x = list(zip(self.lower, self.upper))
@@ -124,7 +124,8 @@ class MultiSurrogateOptimiser:
             # Retrieve the next sample point.
             X_next = None
             if acquisition_func is None:
-                X_next, _, = self._get_proposed_EHVI(EHVI, models, self.ideal_point, self.max_point, ysample, cached_samples)
+                pf = calc_pf(ysample)
+                X_next, _, = self._get_proposed_EHVI(EHVI, models, self.ideal_point, self.max_point, pf, cached_samples)
             else:
                 min_scalar =  np.min([acquisition_func(y, ref_dir) for y in ysample])
                 X_next, _, _ = self._get_proposed_scalarisation(expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
