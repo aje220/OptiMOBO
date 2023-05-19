@@ -1,7 +1,7 @@
 # OptiMOBO
 Solve bi-objective multi-objective problems using multi-objective bayesian optimisation (MOBO).
 
-This repo contains implementations of two MOBO methods.
+This repo contains implementations of two MOBO methods. They are designed to solve bi-objective minimisation problems, no contraints are supported.
 The methods include:
 * **Mono-surrogate.** This uses a single model to optimise. Objective vectors are aggregated into a single scalar value and a Gaussian process is built upon the scalarised values.
 * **Multi-surrogate.** This method uses multiple models. One model for each objective. Multi-objective acquisition functions are used to identify new sample points.
@@ -60,7 +60,7 @@ The output `results` is a tuple containing:
 * All inputs used in the search.
 
 ## Key Features
-#### Mono and multi-surrogate
+#### Mono and multi-surrogate:
 Two optimisers based on differing methods. 
 
 #### Choice of acquisition/aggragation functions:
