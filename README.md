@@ -1,5 +1,5 @@
 # OptiMOBO
-Solve multi-objective problems using multi-surrogate and mono-surrogate methods.
+Solve bi-objective multi-objective problems using multi-objective optimisation.
 
 This repo contains implementations of multi-objective bayesian optimisation (MOBO) methods. 
 The methods include: 
@@ -9,7 +9,7 @@ The methods include:
 The two methods are written as two classes `MultiSurrogateOptimiser` and `MonoSurrogateOptimiser`.
 They are designed to solve problems that inherit from the `ElementwiseProblem` shown in the library [pymoo](https://pymoo.org/index.html).
 
-#### Example
+#### Examples 
 The following code defines a bi-objective problem, MyProblem, and uses multi-surrogate Bayesian optimisation (utilising EHVI as an acquisition function) to solve.
 ```python
 import numpy as np
@@ -30,16 +30,34 @@ class MyProblem(ElementwiseProblem):
         out["F"] = [f1, f2]
 
 problem = MyProblem()
-optimi = MultiSurrogateOptimiser(problem, [661,12], [0,0])
-out = optimi.solve(n_iterations=10, display_pareto_front=True, n_init_samples=10)
+optimi = MultiSurrogateOptimiser(problem, [0,0], [700,12])
+out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=Tchebicheff([0,0],[700,12]))
 ```
+
+Will return a Pareto set approximation:
+
+![dadsdaa](https://github.com/aje220/OptiMOBO/assets/78644199/a9d08527-dc1b-44d5-8427-3bbbf0587015, "MyProblem Pareto Approximation")
+
+For the multi-objective benchmark problem DTLZ5:
+```python
+from pymoo.problems import get_problem
+problem = get_problem("dtlz5", n_obj=2, n_var=5)
+optimi = MultiSurrogateOptimiser(problem, [0,0], [1.3,1.3])
+out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=Tchebicheff([0,0],[1.3,1.3])) 
+```
+
+Will return:
+
+![dtlz5](https://github.com/aje220/OptiMOBO/assets/78644199/e6c959c0-463c-46d0-bbd5-c8e2c5caaa75)
+
+
 The output `results` is a tuple containing:
 * Solutions on the Pareto front approximation.
 * The corresponding inputs to the solutions on the Pareto front.
 * All evaluated solutions.
 * All inputs used in the search.
 
-#### Key Features
+### Key Features
 ##### Mono and multi-surrogate
 Two optimisers based on differing methods. 
 
@@ -61,7 +79,7 @@ Including:
 They are written so they can be used in any context.
 
 ##### Experimental Parameters
-Various experimental parameters can be set.
+Various experimental parameters can be customised. 
 
 
 #### Requirements
