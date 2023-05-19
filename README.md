@@ -48,7 +48,9 @@ out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=2
 
 Will return:
 
-![dtlz5](https://github.com/aje220/OptiMOBO/assets/78644199/e6c959c0-463c-46d0-bbd5-c8e2c5caaa75, "DTLZ5 Pareto Front approximation")
+![adwdawdssss](https://github.com/aje220/OptiMOBO/assets/78644199/60c2f285-b046-4445-a77c-5f6d78a21b12, "DTLZ5 Pareto front approximation")
+
+
 
 
 The output `results` is a tuple containing:
