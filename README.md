@@ -1,8 +1,8 @@
 # OptiMOBO
-Solve bi-objective multi-objective problems using multi-objective optimisation.
+Solve bi-objective multi-objective problems using multi-objective bayesian optimisation (MOBO).
 
-This repo contains implementations of multi-objective bayesian optimisation (MOBO) methods. 
-The methods include: 
+This repo contains implementations of two MOBO methods.
+The methods include:
 * **Mono-surrogate.** This uses a single model to optimise. Objective vectors are aggregated into a single scalar value and a Gaussian process is built upon the scalarised values.
 * **Multi-surrogate.** This method uses multiple models. One model for each objective. Multi-objective acquisition functions are used to identify new sample points.
 
@@ -48,7 +48,7 @@ out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=2
 
 Will return:
 
-![dtlz5](https://github.com/aje220/OptiMOBO/assets/78644199/e6c959c0-463c-46d0-bbd5-c8e2c5caaa75)
+![dtlz5](https://github.com/aje220/OptiMOBO/assets/78644199/e6c959c0-463c-46d0-bbd5-c8e2c5caaa75, "DTLZ5 Pareto Front approximation")
 
 
 The output `results` is a tuple containing:
@@ -57,15 +57,15 @@ The output `results` is a tuple containing:
 * All evaluated solutions.
 * All inputs used in the search.
 
-### Key Features
-##### Mono and multi-surrogate
+## Key Features
+#### Mono and multi-surrogate
 Two optimisers based on differing methods. 
 
-##### Choice of acquisition/aggragation functions:
-In mono-surrogate MOBO, scalarisation functions are used to aggregate objective vectors in a single value that can be used by the optimsier
+#### Choice of acquisition/aggragation functions:
+In mono-surrogate MOBO, scalarisation functions are used to aggregate objective vectors in a single value that can be used by the optimsier.
 In multi-surrogate MOBO, scalarisation functions are used as convergence measures to select sample points.
-This package contains 9 scalarisation functions that can be used in the above mentioned context.
-Including:
+This package contains 9 scalarisation functions that can be used in the above mentioned contexts.
+Options Include:
 * Tchebicheff
 * Modified Tchebicheff
 * Augmented Tchebicheff
@@ -78,12 +78,12 @@ Including:
 
 They are written so they can be used in any context.
 
-##### Experimental Parameters
-Various experimental parameters can be customised. 
+#### Experimental Parameters
+Various experimental parameters can be customised.
 
 
-#### Requirements
-* Numpy
-* Scipy
+## Requirements
+* numpy
+* scipy
 * pygmo
 * pymoo
