@@ -10,7 +10,7 @@ The two methods are written as two classes `MultiSurrogateOptimiser` and `MonoSu
 They are designed to solve problems that inherit from the `ElementwiseProblem` shown in the library [pymoo](https://pymoo.org/index.html).
 
 #### Examples 
-The following code defines a bi-objective problem, MyProblem, and uses multi-surrogate Bayesian optimisation (utilising EHVI as an acquisition function) to solve.
+The following code defines a bi-objective problem, MyProblem, and uses multi-surrogate Bayesian optimisation (utilising Tchebicheff aggregation as an acquisition function) to solve.
 ```python
 import numpy as np
 from optimisers import MultiSurrogateOptimiser
