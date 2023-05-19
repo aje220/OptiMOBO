@@ -39,8 +39,29 @@ The output `results` is a tuple containing:
 * All evaluated solutions.
 * All inputs used in the search.
 
-#### Scalarisation and Acqusition options.
-The scalarisation functions in scalarisations.py can be used in `MonoSurrogateOptimiser` as aggregation functions and as acquisition functions in `MultiSurrogateOptimiser`.
+#### Key Features
+##### Mono and multi-surrogate
+Two optimisers based on differing methods. 
+
+##### Choice of acquisition/aggragation functions:
+In mono-surrogate MOBO, scalarisation functions are used to aggregate objective vectors in a single value that can be used by the optimsier
+In multi-surrogate MOBO, scalarisation functions are used as convergence measures to select sample points.
+This package contains 9 scalarisation functions that can be used in the above mentioned context.
+Including:
+* Tchebicheff
+* Modified Tchebicheff
+* Augmented Tchebicheff
+* Weighted Norm
+* Weighted Power
+* Weighted Product
+* PBI
+* IPBI
+* Exponential Weighted Criterion
+
+They are written so they can be used in any context.
+
+##### Experimental Parameters
+Various experimental parameters can be set.
 
 
 #### Requirements
