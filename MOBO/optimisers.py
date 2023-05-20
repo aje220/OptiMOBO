@@ -19,6 +19,12 @@ class MultiSurrogateOptimiser:
     Class that allows optimisation of multi-objective problems using a multi-surrogate methodology.
     This method creates multiple probabalistic models, one for each objective.
     Constraints not supported.
+
+    Param:
+        test_problem: problem to be solved. Defined via pymoo.
+        ideal_point: also known as the utopian point. is the smallest possible value of an objective vector
+                in the objective space.
+        max_point: the upper boundary of the objective space. The upper boundary for an objective vector.
     """
 
     def __init__(self, test_problem, ideal_point, max_point):
@@ -31,13 +37,31 @@ class MultiSurrogateOptimiser:
 
 
     def _objective_function(self, problem, x):
+        """
+        Wrapper function to just evaluate the objective functions.
+        """
         return problem.evaluate(x)
 
     
     def _get_proposed_scalarisation(self, function, models, min_val, scalar_func, ref_dir, cache):
-        # def _get_proposed_scalarisation(self, X, models, weights, agg_func, agg_function_min, cache)
         """
         Function to retieve the next sample point.
+        This is called when a scalarisation function is being used as an acquisition function.
+        Params:
+            function: acqusition function to optimise
+            models: array of the models trained on each objective
+            min_val: the best scalarisation value from the current population; according to the ref_dir and 
+                the scalarisation function used. 
+            scalar_func: the scalarisation function being used as a convergence measure in the acquisition
+                function
+            ref_dir: randomly selected weight vector (row vector)
+            cache: the premade samples that will transformed over the mean and standard deviation of each
+                proposed point.
+
+        returns:
+            res.x: solution of the optimisation
+            res.fun: values of the objective function
+            ref_dir: weights used.
         """
         def obj(X):
             # return -function(X, models, ref_dir, ideal_point, max_point, min_val, cache)
@@ -51,27 +75,44 @@ class MultiSurrogateOptimiser:
     def _get_proposed_EHVI(self, function, models, ideal_point, max_point, pf, cache):
         """
         Function to retrieve the next sample point using EHVI.
-        This is a seperate function to _get_proposed as the parameters are different.
+        This is a seperate function to _get_proposed_scalarisation as the parameters are different.
+
+        Params:
+            function: acqusition function to optimise.
+            models: array of the models trained on each objective.
+            ideal_point: also known as the utopian point. is the smallest possible value of an objective vector
+                in the objective space.
+            max_point: the upper boundary of the objective space. The upper boundary for an objective vector.
+            pf: pareto front approximation of the current population
+            cache: the premade samples that will transformed over the mean and standard deviation of each
+                proposed point.
         
+        returns:
+            res.x: solution of the optimisation
+            res.fun: values of the objective function 
+
         """
         def obj(X):
             return -function(X, models, ideal_point, max_point, pf, cache)
 
         # x = [(bounds[0], bounds[1])] * n_var
-        x = list(zip(self.lower, self.upper))
+        # x = list(zip(self.lower, self.upper))
+        x = list(zip(self.test_problem.xl, self.test_problem.xu))
+
         res = differential_evolution(obj, x)
         return res.x, res.fun
 
 
     
-    def solve(self, n_iterations=100, display_pareto_front=False, n_init_samples=5, acquisition_func=None):
+    def solve(self, n_iterations=100, display_pareto_front=False, n_init_samples=5, sample_exponent=5, acquisition_func=None):
         """
-        This function attempts to solve the multi-objective optimisation problem.
+        This fcontains the main algorithm to solve the optimisation problem.
 
         Params:
             n_iterations: the number of iterations 
             
-            display_pareto_front: bool. When set to true, a matplotlib plot will show the pareto front approximation discovered by the optimiser.
+            display_pareto_front: bool. When set to true, a matplotlib plot will show the pareto front 
+                approximation discovered by the optimiser.
             
             n_init_samples: the number of initial samples evaluated before optimisation occurs.
 
@@ -90,6 +131,7 @@ class MultiSurrogateOptimiser:
         """
         # variables/constants
         problem = self.test_problem
+        # We can only solve 2 objective problems at the moment. This is caused by the fact EHVI can only handle 2 objectives.
         assert(problem.n_obj == 2)
 
         # Initial samples.
@@ -101,7 +143,7 @@ class MultiSurrogateOptimiser:
 
         # Create cached samples, this is to speed up computation in calculation of the acquisition functions.
         sampler = qmc.Sobol(d=2, scramble=True)
-        sample = sampler.random_base2(m=10)
+        sample = sampler.random_base2(m=sample_exponent)
         norm_samples1 = norm.ppf(sample[:,0])
         norm_samples2 = norm.ppf(sample[:,1])
         cached_samples = np.asarray(list(zip(norm_samples1, norm_samples2)))
@@ -153,6 +195,8 @@ class MultiSurrogateOptimiser:
             plt.scatter(ysample[0:n_init_samples,0], ysample[0:n_init_samples,1], color="blue", label="Initial samples.")
             plt.scatter(pf_approx[:,0], pf_approx[:,1], color="green", label="PF approximation.")
             plt.scatter(ysample[-1:-5:-1,0], ysample[-1:-5:-1,1], color="black", label="Last 5 samples.")
+            plt.xlabel(r"$f_1(x)$")
+            plt.ylabel(r"$f_2(x)$")
             plt.legend()
             plt.show()
 
@@ -172,6 +216,12 @@ class MonoSurrogateOptimiser:
     Class that enables optimisation of multi-objective problems using a mono-surrogate methodology.
     Mono-surrogate method aggregates multiple objectives into a single scalar value, this then allows optimisation of
     a multi-objective problem with a single probabalistic model.
+    
+    Param:
+        test_problem: problem to be solved. Defined via pymoo.
+    ideal_point: also known as the utopian point. is the smallest possible value of an objective vector
+            in the objective space.
+    max_point: the upper boundary of the objective space. The upper boundary for an objective vector.
     """
     def __init__(self, test_problem, ideal_point, max_point):
         self.test_problem = test_problem
@@ -189,6 +239,10 @@ class MonoSurrogateOptimiser:
     def _expected_improvement(self, X, model, opt_value, kappa=0.001):
         """
         EI, single objective acquisition function.
+
+        Returns:
+            EI: The Expected improvement of X over the opt_value given the information
+                from the model.
         """
         # import pdb; pdb.set_trace()
         # get the mean and s.d. of the proposed point
@@ -206,13 +260,22 @@ class MonoSurrogateOptimiser:
     def _get_proposed(self, function, models, current_best):
         """
         Helper function to optimise the acquisition function. This is to identify the next sample point.
+
+        Params:
+            function: The acquisition function to be optimised.
+            models: The model trained on the aggregated values.
+            current_best: Best/most optimal solution found thus far.
+
+        Returns:
+            res.x: solution of the optimsiation.
+            res.fun: function value of the optimisation.
         """
 
         def obj(X):
             # print("obj called")
             return -function(X, models, current_best)
 
-        x = list(zip(self.lower, self.upper))
+        x = list(zip(self.test_problem.xl, self.test_problem.xu))
 
         res = differential_evolution(obj, x)
         return res.x, res.fun
@@ -329,6 +392,8 @@ class MonoSurrogateOptimiser:
             plt.scatter(ysample[0:n_init_samples,0], ysample[0:n_init_samples,1], color="blue", label="Initial samples.")
             plt.scatter(pf_approx[:,0], pf_approx[:,1], color="green", label="PF approximation.")
             plt.scatter(ysample[-1:-5:-1,0], ysample[-1:-5:-1,1], color="black", label="Last 5 samples.", zorder=10)
+            plt.xlabel(r"$f_1(x)$")
+            plt.ylabel(r"$f_2(x)$")
             plt.legend()
             plt.show()
 
