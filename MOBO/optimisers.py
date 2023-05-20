@@ -187,8 +187,9 @@ class MultiSurrogateOptimiser:
         # Get hypervolume metric.
         # ref_point = self.max_point
         # HV_ind = HV(ref_point=ref_point)
-        # pf_approx = calc_pf(ysample)
         # hv = HV_ind(ysample)
+
+        pf_approx = calc_pf(ysample)
 
         if display_pareto_front:
             plt.scatter(ysample[5:,0], ysample[5:,1], color="red", label="Samples.")
