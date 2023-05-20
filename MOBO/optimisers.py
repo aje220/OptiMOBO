@@ -184,11 +184,11 @@ class MultiSurrogateOptimiser:
             # Update archive.
             Xsample = np.vstack((Xsample, X_next))
 
-        # Get hypervolume metric
-        ref_point = self.max_point
-        HV_ind = HV(ref_point=ref_point)
-        pf_approx = calc_pf(ysample)
-        hv = HV_ind(ysample)
+        # Get hypervolume metric.
+        # ref_point = self.max_point
+        # HV_ind = HV(ref_point=ref_point)
+        # pf_approx = calc_pf(ysample)
+        # hv = HV_ind(ysample)
 
         if display_pareto_front:
             plt.scatter(ysample[5:,0], ysample[5:,1], color="red", label="Samples.")
@@ -216,7 +216,7 @@ class MonoSurrogateOptimiser:
     Class that enables optimisation of multi-objective problems using a mono-surrogate methodology.
     Mono-surrogate method aggregates multiple objectives into a single scalar value, this then allows optimisation of
     a multi-objective problem with a single probabalistic model.
-    
+
     Param:
         test_problem: problem to be solved. Defined via pymoo.
     ideal_point: also known as the utopian point. is the smallest possible value of an objective vector
@@ -325,19 +325,6 @@ class MonoSurrogateOptimiser:
         # Evaluate inital samples.
         ysample = np.asarray([self._objective_function(problem, x) for x in Xsample])
 
-        # # Aggregate initial samples.
-        # if aggregation_func in {"_PBI_"}:
-        #     aggregated_samples = [PBI(i, weights, self.ideal_point, self.max_point)[0] for i in ysample]
-        # elif aggregation_func in {"_TCH_"}:
-        #     aggregated_samples = [chebyshev(i, weights, self.ideal_point, self.max_point) for i in ysample]
-        # elif aggregation_func in {"EWC"}:
-        #     aggregated_samples = [exponential_weighted_criterion(i, weights) for i in ysample]
-        # elif aggregation_func in {"IPBI"}:
-        #     aggregated_samples = [IPBI(i, weights, self.ideal_point, self.max_point, 5)]
-
-        #     Exception()
-
-        # import pdb; pdb.set_trace()
         aggregated_samples = np.asarray([aggregation_func(i, weights) for i in ysample]).flatten()
 
         model = GaussianProcessRegressor()
@@ -348,11 +335,9 @@ class MonoSurrogateOptimiser:
         ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=100)
 
         for i in range(n_iterations):
-            # import pdb; pdb.set_trace()
+
             # Identify the current best sample, used for search.
             current_best = aggregated_samples[np.argmin(aggregated_samples)]
-
-            # import pdb; pdb.set_trace()
 
             model.fit(Xsample, aggregated_samples)
 
@@ -368,17 +353,7 @@ class MonoSurrogateOptimiser:
             ref_dir = ref_dirs[np.random.randint(0,len(ref_dirs))]
             # print("Selected weight: "+str(ref_dir))
 
-            # aggregate new sample
-            # if aggregation_func in {"_PBI_"}:
-            #     agg = PBI(next_y, ref_dir, self.ideal_point, self.max_point)[0]
-            # elif aggregation_func in {"_TCH_"}:
-            #     agg = chebyshev(next_y, ref_dir, self.ideal_point, self.max_point)
-            # else:
-            #     Exception()
             agg = aggregation_func(next_X, ref_dir)
-            # agg = PBI(next_y, weights, ideal_point, max_point)[0]
-            # aggregated_samples.append(agg)
-
 
             aggregated_samples = np.append(aggregated_samples, agg)
 
@@ -397,11 +372,11 @@ class MonoSurrogateOptimiser:
             plt.legend()
             plt.show()
 
+        # Find the inputs that correspond to the pareto front.
         indicies = []
         for i, item in enumerate(ysample):
             if item in pf_approx:
                 indicies.append(i)
-        
         pf_inputs = Xsample[indicies]
 
         return pf_approx, pf_inputs, ysample, Xsample
