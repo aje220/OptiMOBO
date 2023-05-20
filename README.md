@@ -7,7 +7,7 @@ The methods include:
 * **Multi-surrogate.** This method uses multiple models. One model for each objective. Multi-objective acquisition functions are used to identify new sample points.
 
 The two methods are written as two classes `MultiSurrogateOptimiser` and `MonoSurrogateOptimiser`.
-They are designed to solve problems that inherit from the `ElementwiseProblem` shown in the library [pymoo](https://pymoo.org/index.html).
+They are designed to solve problems that inherit from the `Problem` class presented in the library [pymoo](https://pymoo.org/index.html).
 
 #### Examples 
 The following code defines a bi-objective problem, MyProblem, and uses multi-surrogate Bayesian optimisation (utilising Tchebicheff aggregation as an acquisition function) to solve.
