@@ -237,7 +237,7 @@ class MonoSurrogateOptimiser:
     def _objective_function(self, problem, x):
         return problem.evaluate(x)
 
-    def _expected_improvement(self, X, model, opt_value, kappa=0.001):
+    def _expected_improvement(self, X, model, opt_value, kappa=0.01):
         """
         EI, single objective acquisition function.
 
@@ -315,8 +315,9 @@ class MonoSurrogateOptimiser:
 
         problem.n_obj = 2
 
+        # 1/n_obj * 
         # initial weights are all the same
-        weights = np.asarray([0.5]*problem.n_obj)
+        weights = np.asarray([1/problem.n_obj]*problem.n_obj)
 
         # get the initial samples used to build first model
         # use latin hypercube sampling
@@ -333,7 +334,7 @@ class MonoSurrogateOptimiser:
         # Fit initial model.
         model.fit(Xsample, aggregated_samples)
 
-        ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=100)
+        ref_dirs = get_reference_directions("das-dennis", problem.n_obj, n_partitions=100)
 
         for i in range(n_iterations):
 
@@ -354,7 +355,7 @@ class MonoSurrogateOptimiser:
             ref_dir = ref_dirs[np.random.randint(0,len(ref_dirs))]
             # print("Selected weight: "+str(ref_dir))
 
-            agg = aggregation_func(next_X, ref_dir)
+            agg = aggregation_func(next_y, ref_dir)
 
             aggregated_samples = np.append(aggregated_samples, agg)
 

@@ -26,6 +26,15 @@ class Scalarisation:
         D = self._do(F, weights, **args).flatten()
         return D
 
+class WeightedSum(Scalarisation):
+    
+    def _do(self, F, weights):
+        # print(F)
+        # print(weights)
+        return np.sum(F*weights)
+
+
+
 class Tchebicheff(Scalarisation):
     """
     Tchebicheff takes two extra arguments when instantiated. 
