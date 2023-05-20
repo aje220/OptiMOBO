@@ -36,7 +36,7 @@ out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=2
 
 Will return a Pareto set approximation:
 
-![dadsdaa](https://github.com/aje220/OptiMOBO/assets/78644199/a9d08527-dc1b-44d5-8427-3bbbf0587015, "MyProblem Pareto Approximation")
+![MyProblem](docs/media/dadsdaa.png "MyProblem Pareto Approximation")
 
 For the multi-objective benchmark problem DTLZ5:
 ```python
@@ -48,7 +48,7 @@ out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=2
 
 Will return:
 
-![adwdawdssss](https://github.com/aje220/OptiMOBO/assets/78644199/60c2f285-b046-4445-a77c-5f6d78a21b12, "DTLZ5 Pareto front approximation")
+![DTLZ5](docs/media/adwdawdssss.png "DTLZ5 Pareto front approximation")
 
 
 
