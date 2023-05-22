@@ -1,16 +1,18 @@
-import os
+from pathlib import Path
 from setuptools import setup
 
-with open('requirements.txt') as f:
-    required = f.read().splitlines()
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
-   name='OptiMOBO',
-   version='0.1.0',
+   name='optimobo',
+   version='0.1.5',
    license='MIT',
    description='Solve multi-objective problems using Bayesian optimisation.',
+   long_description=long_description,
+   long_description_content_type='text/markdown',
    author='aje220',
    author_email='aje220@exeter.ac.uk',
-   packages=['OptiMOBO'],  #same as name
-   install_requires=[required], #external packages as dependencies
+   packages=['optimobo'],  #same as name
+   install_requires=['numpy>=1.20.0', 'pymoo>=0.6.0', 'pygmo>=2.0.0', 'scipy>=1.9.0', 'scikit-learn>=1.0.0'], #external packages as dependencies
 )

@@ -13,7 +13,8 @@ They are designed to solve problems that inherit from the `Problem` class presen
 The following code defines a bi-objective problem, MyProblem, and uses multi-surrogate Bayesian optimisation (utilising Tchebicheff aggregation as an acquisition function) to solve.
 ```python
 import numpy as np
-from optimisers import MultiSurrogateOptimiser
+import optimobo.scalarisations as sc
+import optimobo.optimisers as opti
 from pymoo.core.problem import ElementwiseProblem
 
 class MyProblem(ElementwiseProblem):
@@ -30,8 +31,8 @@ class MyProblem(ElementwiseProblem):
         out["F"] = [f1, f2]
 
 problem = MyProblem()
-optimi = MultiSurrogateOptimiser(problem, [0,0], [700,12])
-out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=Tchebicheff([0,0],[700,12]))
+optimi = opti.MultiSurrogateOptimiser(problem, [0,0], [700,12])
+out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[700,12]))
 ```
 
 Will return a Pareto set approximation:
@@ -42,8 +43,8 @@ For the multi-objective benchmark problem DTLZ5:
 ```python
 from pymoo.problems import get_problem
 problem = get_problem("dtlz5", n_obj=2, n_var=5)
-optimi = MultiSurrogateOptimiser(problem, [0,0], [1.3,1.3])
-out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=Tchebicheff([0,0],[1.3,1.3])) 
+optimi = opti.MultiSurrogateOptimiser(problem, [0,0], [1.3,1.3])
+out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[1.3,1.3])) 
 ```
 
 Will return:
@@ -58,6 +59,11 @@ The output `results` is a tuple containing:
 * The corresponding inputs to the solutions on the Pareto front.
 * All evaluated solutions.
 * All inputs used in the search.
+
+## Installation
+Can be installed via:
+
+`pip install optimobo`
 
 ## Key Features
 #### Mono and multi-surrogate:
@@ -90,3 +96,4 @@ Various experimental parameters can be customised.
 * scipy
 * pygmo
 * pymoo
+* sklearn

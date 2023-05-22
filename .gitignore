@@ -1,2 +1,6 @@
 MOBO/__pycache__
-MOBO/testing.py
+tests
+pyproject.toml
+build
+dist
+optimobo.egg-info
