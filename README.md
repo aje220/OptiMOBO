@@ -44,7 +44,7 @@ For the multi-objective benchmark problem DTLZ5:
 from pymoo.problems import get_problem
 problem = get_problem("dtlz5", n_obj=2, n_var=5)
 optimi = opti.MultiSurrogateOptimiser(problem, [0,0], [1.3,1.3])
-out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=Tchebicheff([0,0],[1.3,1.3])) 
+out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[1.3,1.3])) 
 ```
 
 Will return:
