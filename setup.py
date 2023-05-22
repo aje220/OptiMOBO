@@ -1,10 +1,16 @@
+from pathlib import Path
 from setuptools import setup
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
    name='optimobo',
-   version='0.1.2',
+   version='0.1.3',
    license='MIT',
    description='Solve multi-objective problems using Bayesian optimisation.',
+   long_description=long_description,
+   long_description_content_type='text/markdown',
    author='aje220',
    author_email='aje220@exeter.ac.uk',
    packages=['optimobo'],  #same as name
