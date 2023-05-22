@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
    name='optimobo',
-   version='0.1.4',
+   version='0.1.5',
    license='MIT',
    description='Solve multi-objective problems using Bayesian optimisation.',
    long_description=long_description,
