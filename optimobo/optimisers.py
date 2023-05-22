@@ -6,12 +6,15 @@ from scipy.stats import qmc
 from scipy.stats import norm
 from scipy.optimize import differential_evolution
 from pymoo.util.ref_dirs import get_reference_directions
-from pymoo.indicators.hv import HV
-from pymoo.core.problem import ElementwiseProblem
+# from pymoo.indicators.hv import HV
+# from pymoo.core.problem import ElementwiseProblem
 
 
-from util_functions import EHVI, calc_pf, EIPBI, EITCH, expected_decomposition
-from scalarisations import ExponentialWeightedCriterion, IPBI, PBI, Tchebicheff, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff
+# from util_functions import EHVI, calc_pf, expected_decomposition
+from . import util_functions
+
+
+# from scalarisations import ExponentialWeightedCriterion, IPBI, PBI, Tchebicheff, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff
 
 
 class MultiSurrogateOptimiser:
@@ -166,11 +169,11 @@ class MultiSurrogateOptimiser:
             # Retrieve the next sample point.
             X_next = None
             if acquisition_func is None:
-                pf = calc_pf(ysample)
-                X_next, _, = self._get_proposed_EHVI(EHVI, models, self.ideal_point, self.max_point, pf, cached_samples)
+                pf = util_functions.calc_pf(ysample)
+                X_next, _, = self._get_proposed_EHVI(util_functions.EHVI, models, self.ideal_point, self.max_point, pf, cached_samples)
             else:
                 min_scalar =  np.min([acquisition_func(y, ref_dir) for y in ysample])
-                X_next, _, _ = self._get_proposed_scalarisation(expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
+                X_next, _, _ = self._get_proposed_scalarisation(util_functions.expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
 
 
             # expected_decomposition([1,1], models, ref_dir, acquisition_func, min_scalar, cached_samples)
@@ -189,7 +192,7 @@ class MultiSurrogateOptimiser:
         # HV_ind = HV(ref_point=ref_point)
         # hv = HV_ind(ysample)
 
-        pf_approx = calc_pf(ysample)
+        pf_approx = util_functions.calc_pf(ysample)
 
         if display_pareto_front:
             plt.scatter(ysample[5:,0], ysample[5:,1], color="red", label="Samples.")
@@ -362,7 +365,7 @@ class MonoSurrogateOptimiser:
             # Add the variables into the archives.
             Xsample = np.vstack((Xsample, next_X))
         
-        pf_approx = calc_pf(ysample)
+        pf_approx = util_functions.calc_pf(ysample)
 
         if display_pareto_front:
             plt.scatter(ysample[5:,0], ysample[5:,1], color="red", label="Samples.")
