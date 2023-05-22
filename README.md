@@ -96,3 +96,4 @@ Various experimental parameters can be customised.
 * scipy
 * pygmo
 * pymoo
+* sklearn
