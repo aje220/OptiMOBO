@@ -60,6 +60,11 @@ The output `results` is a tuple containing:
 * All evaluated solutions.
 * All inputs used in the search.
 
+## Installation
+Can be installed via:
+
+`pip install optimobo`
+
 ## Key Features
 #### Mono and multi-surrogate:
 Two optimisers based on differing methods. 
