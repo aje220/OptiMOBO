@@ -179,7 +179,7 @@ class PBI(Scalarisation):
     
     def _do(self, f, weights):
 
-        objs = [(f[i]-np.asarray(self.ideal_point)[i])/(np.asarray(self.max_point)[i]-np.asarray(self.ideal_point)[i]) for i in range(2)]
+        objs = [(f[i]-np.asarray(self.ideal_point)[i])/(np.asarray(self.max_point)[i]-np.asarray(self.ideal_point)[i]) for i in range(len(f))]
         
         W = np.reshape(weights,(1,-1))
         normW = np.linalg.norm(W, axis=1) # norm of weight vectors    
@@ -215,7 +215,7 @@ class IPBI(Scalarisation):
     
     def _do(self, f, weights):
 
-        objs = [(f[i]-np.asarray(self.ideal_point)[i])/(np.asarray(self.max_point)[i]-np.asarray(self.ideal_point)[i]) for i in range(2)]
+        objs = [(f[i]-np.asarray(self.ideal_point)[i])/(np.asarray(self.max_point)[i]-np.asarray(self.ideal_point)[i]) for i in range(len(f))]
 
         W = np.reshape(weights,(1,-1))
         normW = np.linalg.norm(W, axis=1) # norm of weight vectors    
