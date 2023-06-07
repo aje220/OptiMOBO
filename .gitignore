@@ -1,6 +1,10 @@
 MOBO/__pycache__
+testing.py
+__pycache__
 tests
 pyproject.toml
 build
 dist
 optimobo.egg-info
+optimisers_comp.py
+util_comp.py

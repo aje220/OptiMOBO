@@ -1,10 +1,59 @@
 
 import numpy as np
 from scipy import stats
-from pygmo import fast_non_dominated_sorting
+from pygmo import fast_non_dominated_sorting, hypervolume
+import GPy
 
-# from pymoo.util.ref_dirs import get_reference_directions
 
+def expected(X, models, agg_func, cache, weights):
+
+    predicitions = []
+    for i in models:
+        # import pdb; pdb.set_trace()
+        output = i.predict(np.asarray([X]))
+        predicitions.append(output)
+
+    # mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
+    # sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
+    # print(mu)
+    # print(sigma)
+
+    # Translate the samples to the correct position
+    sample_values = change(predicitions, cache)
+
+    n_samples = len(sample_values)
+
+    # PBI values of all the points sampled from the distribution.
+    aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
+
+    # import pdb; pdb.set_trace()
+
+    # total = np.mean(np.maximum(np.zeros((n_samples,1)), agg_function_min - aggregated_samples ))
+    # print(total)
+
+    total = np.mean(aggregated_samples)
+    std = np.std(aggregated_samples)
+
+# Calculate twice the standard deviation
+    twice_std = 2 * std
+
+    upper_bound = total + twice_std
+    lower_bound = total - twice_std
+
+
+    return total, upper_bound, lower_bound
+
+def generate_latin_hypercube_samples(num_samples, variable_ranges):
+    num_vars = len(variable_ranges)
+    samples = np.empty((num_samples, num_vars))
+
+    for i, (min_val, max_val) in enumerate(variable_ranges):
+        intervals = np.linspace(min_val, max_val, num_samples + 1)
+        points = np.random.rand(num_samples) + np.arange(num_samples)
+        points /= num_samples
+        samples[:, i] = np.random.permutation(intervals[:-1] + (intervals[1:] - intervals[:-1]) * points)
+
+    return samples
 
 def calc_pf(Y):
     """
@@ -15,7 +64,6 @@ def calc_pf(Y):
     returns: Pareto front, in the same form as y, numpy array in the shape: (n_points x n_dimensions)
     """
     ndf, _, _, _ = fast_non_dominated_sorting(Y)
-
     return np.asarray([list(Y[i]) for i in ndf[0]])
 
 
@@ -90,25 +138,69 @@ def EHVI(X, models, ideal_point, max_point, PF, cache):
     """
     # n_samples = 1024
 
-    predicitions = []
+    predictions = []
     for i in models:
-        output = i.predict(np.asarray([X]), return_std=True)
-        predicitions.append(output)
+        output = i.predict(np.asarray([X]))
+        # output = i.predict(np.asarray([X]), return_std=True)
+        predictions.append(output)
 
-
-    sample_values = change(predicitions, cache)
+    sample_values = change(predictions, cache, 2)
 
     samples_vals = np.asarray(sample_values)
     cov = np.cov(samples_vals[:,0], samples_vals[:,1])
-
     # PF = calc_pf(ysample)
     r = max_point
-    mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
+    mu = np.asarray([predictions[0][0][0], predictions[1][0][0]])
     # sigma = np.asarray([[predicitions[0][1][0], 0],[0, predicitions[0][1][0]]])
     # sigma = predicitions[0][1][0]
     return(EHVI_2D_aux(PF, r, mu, cov))
 
-def change(predicitions, samples):
+def EHVI_3D(X, models, ideal_point, max_point, PF, cache):
+
+    predictions = []
+    for i in models:
+        output = i.predict(np.asarray([X]))
+        # output = i.predict(np.asarray([X]), return_std=True)
+        predictions.append(output)
+
+    dimensions = len(models)
+
+    sample_values = change(predictions, cache, dimensions)
+
+    samples_vals = np.asarray(sample_values)
+    # import pdb; pdb.set_trace()
+    # cov = np.cov(samples_vals[:,0], samples_vals[:,1], samples_vals[:,2])
+    # PF = calc_pf(ysample)
+    # r = max_point
+    # mu = np.asarray([predictions[0][0][0], predictions[1][0][0]], predictions[2][0][0])
+    # sigma = np.asarray([[predicitions[0][1][0], 0],[0, predicitions[0][1][0]]])
+    # sigma = predicitions[0][1][0]
+    # import pdb; pdb.set_trace()
+
+    answer = 0
+    hv = hypervolume(PF)
+    Sminus = hv.compute(max_point)
+    # import pdb; pdb.set_trace()
+
+    for i in samples_vals:
+
+        # hvol = (i[0] - max_point[0]) * (i[1] - max_point[1]) * (i[2] - max_point[2])
+        hvol = (max_point[0] - i[0]) * (max_point[1] - i[1]) * (max_point[2] - i[2])
+        hv_one = hypervolume([i])
+        hvol = hv_one.compute(max_point)
+        # bounded by r (from below) and candidate.f (from above).
+        # Sminus = hvol3d(P, r, candidate.f)
+        # import pdb; pdb.set_trace()
+
+        hvol -= Sminus
+
+        if hvol > 0:
+            answer += hvol
+        
+    # print(answer)
+    return answer / len(samples_vals)
+
+def change(predicitions, samples, dimensions):
     """
     This function takes the predictions from both models, along with some pre generated uniform random samples.
     It returns normally distributed samples with the mean in predictions and a covariance matrix given in predicitions.
@@ -120,20 +212,34 @@ def change(predicitions, samples):
     """
     
     # get the means and standard deviations
-    mu1 = predicitions[0][0][0]
-    mu2 = predicitions[1][0][0]
+    # mu1 = predicitions[0][0][0]
+    # mu2 = predicitions[1][0][0]
 
-    sigma1 = predicitions[0][1][0]
-    sigma2 = predicitions[0][1][0]
+    mus = [predicitions[i][0][0] for i in range(dimensions)]
+
+    # sigma1 = predicitions[0][1][0]
+    # sigma2 = predicitions[0][1][0]
+
+    sigmas = [predicitions[0][1][0] for i in range(dimensions)]
     
     # import pdb; pdb.set_trace()
 
     # transform the 
     # Scale and shift the normal distribution to match the desired mean and standard deviation
-    scaled_samples1 = samples[:,0] * sigma1 + mu1
-    scaled_samples2 = samples[:,1] * sigma2 + mu2
+    # scaled_samples1 = samples[:,0] * np.sqrt(sigma1) + mu1
+    # scaled_samples2 = samples[:,1] * np.sqrt(sigma2) + mu2
+
+    scaled_samples = [samples[:,i] * np.sqrt(sigmas[i]) + mus[i] for i in range(dimensions)]
+
+
+
+    # import pdb; pdb.set_trace()
+
+
+
     # return list(map(np.asarray, zip(scaled_samples1, scaled_samples2)))
-    return np.stack((scaled_samples1,scaled_samples2), axis = 1)
+    # return np.stack((scaled_samples1,scaled_samples2), axis = 1)
+    return np.asarray(scaled_samples).T
 
     # return list(zip(scaled_samples1, scaled_samples2))
 
@@ -208,7 +314,7 @@ def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache
     predicitions = []
     for i in models:
         # import pdb; pdb.set_trace()
-        output = i.predict(np.asarray([X]), return_std=True)
+        output = i.predict(np.asarray([X]))
         predicitions.append(output)
 
     # mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
@@ -216,8 +322,9 @@ def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache
     # print(mu)
     # print(sigma)
 
+    dimensions = len(models)
     # Translate the samples to the correct position
-    sample_values = change(predicitions, cache)
+    sample_values = change(predicitions, cache, dimensions)
 
     n_samples = len(sample_values)
 
@@ -336,7 +443,9 @@ def EIPBI(X, models, weights, ideal_point, max_point, PBI_min, cache):
     # print(mu)
     # print(sigma)
 
-    sample_values = change(predicitions, cache)
+    dimensions = len(models)
+
+    sample_values = change(predicitions, cache, dimensions)
 
 
     return EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min)
