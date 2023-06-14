@@ -149,10 +149,7 @@ class MultiSurrogateOptimiser:
             ysample, output objective vectors of all evaluated samples.
             Xsample, all samples that were evaluated.
         """
-        # variables/constants
         problem = self.test_problem
-        # We can only solve 2 objective problems at the moment. This is caused by the fact EHVI can only handle 2 objectives.
-        # assert(problem.n_obj == 2)
 
         # Initial samples.
         variable_ranges = list(zip(self.test_problem.xl, self.test_problem.xu))
@@ -163,7 +160,7 @@ class MultiSurrogateOptimiser:
 
         # Create cached samples, this is to speed up computation in calculation of the acquisition functions.
         cached_samples = self._get_cached_samples(self.n_obj, sample_exponent)
-        # import pdb; pdb.set_trace()
+
         # Reference directions, one of these is radnomly selected every iteration, this promotes diverity.
         ref_dirs = get_reference_directions("das-dennis", self.n_obj, n_partitions=100)
 
@@ -178,13 +175,14 @@ class MultiSurrogateOptimiser:
             # import pdb; pdb.set_trace()
             hv = HV_ind(ysample)
             hypervolume_convergence.append(hv)
+
             # Create models for each objective.
             models = []
             for i in range(problem.n_obj):
-                # import pdb; pdb.set_trace()
-                ys= np.reshape(ysample[:,i], (-1,1))
-                model = GPy.models.GPRegression(Xsample,ys, GPy.kern.Matern52(problem.n_var,ARD=True))
-                # model = GPy.models.GPRegression(Xsample,ys, GPy.kern.Bias(input_dim=1) * GPy.kern.RBF(input_dim=1))
+                ys = np.reshape(ysample[:,i], (-1,1))
+                model = GPy.models.GPRegression(Xsample,ys, GPy.kern.Matern52(self.n_vars,ARD=True))
+
+
                 model.Gaussian_noise.variance.fix(0)
                 model.optimize(messages=False,max_f_eval=1000)
                 models.append(model)
@@ -207,10 +205,9 @@ class MultiSurrogateOptimiser:
                     X_next, _, = self._get_proposed_EHVI(util_functions.EHVI_3D, models, self.ideal_point, self.max_point, pf, cached_samples)
             else:
                 min_scalar =  np.min([acquisition_func(y, ref_dir) for y in ysample])
-                print(min_scalar)
+                # print(min_scalar)
                 X_next, _, _ = self._get_proposed_scalarisation(util_functions.expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
 
-            # expected_decomposition([1,1], models, ref_dir, acquisition_func, min_scalar, cached_samples)
 
             # Evaluate the next input.
             y_next = self._objective_function(problem, X_next)
@@ -228,7 +225,9 @@ class MultiSurrogateOptimiser:
 
         pf_approx = util_functions.calc_pf(ysample)
 
+        # For displaying the Pareto Front.
         if display_pareto_front and problem.n_obj == 2:
+
             plt.scatter(ysample[5:,0], ysample[5:,1], color="red", label="Samples.")
             plt.scatter(ysample[0:n_init_samples,0], ysample[0:n_init_samples,1], color="blue", label="Initial samples.")
             plt.scatter(pf_approx[:,0], pf_approx[:,1], color="green", label="PF approximation.")
@@ -246,9 +245,16 @@ class MultiSurrogateOptimiser:
             ax1.scatter(pf_approx[:,0], pf_approx[:,1], pf_approx[:,2], color="green", label="PF approximation.")
             ax1.scatter(ysample[-1:-5:-1,0], ysample[-1:-5:-1,1], ysample[-1:-5:-1,2], color="black", label="Last 5 samples.")
             ax2.scatter(pf_approx[:,0], pf_approx[:,1], pf_approx[:,2], color="green", label="PF approximation.")
+            ax1.set_xlabel(r"$f_1(x)$")
+            ax1.set_ylabel(r"$f_2(x)$")
+            ax1.set_zlabel(r"$f_3(x)$")
+            ax2.set_xlabel(r"$f_1(x)$")
+            ax2.set_ylabel(r"$f_2(x)$")
+            ax2.set_zlabel(r"$f_3(x)$")
+            
             # ax.xlabel(r"$f_1(x)$")
             # ax.ylabel(r"$f_2(x)$")
-            # ax.legend()
+            ax1.legend()
             plt.show()
 
         # Identify the inputs that correspond to the pareto front solutions.
@@ -280,7 +286,7 @@ class MonoSurrogateOptimiser:
         self.max_point = max_point
         self.ideal_point = ideal_point
         self.n_vars = test_problem.n_var
-        self.n_vars = test_problem.n_obj
+        self.n_obj = test_problem.n_obj
         self.upper = test_problem.xu
         self.lower = test_problem.xl
 
@@ -367,7 +373,6 @@ class MonoSurrogateOptimiser:
         # ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=12)
         problem = self.test_problem
 
-
         # 1/n_obj * 
         # initial weights are all the same
         weights = np.asarray([1/problem.n_obj]*problem.n_obj)
@@ -379,34 +384,32 @@ class MonoSurrogateOptimiser:
 
         # Evaluate inital samples.
         ysample = np.asarray([self._objective_function(problem, x) for x in Xsample])
-
         aggregated_samples = np.asarray([aggregation_func(i, weights) for i in ysample]).flatten()
-
         ys= np.reshape(aggregated_samples, (-1,1))
-        # import pdb; pdb.set_trace()
+
+        # Build initial model
         kern = GPy.kern.Matern52(self.n_vars,ARD=True)
         model = GPy.models.GPRegression(Xsample, ys, kern)
-        # model.kern.lengthscale.constrain_bounded(self.lower, self.upper)
-        # model = GPy.models.GPRegression(Xsample,ys, GPy.kern.Bias(input_dim=1) * GPy.kern.RBF(input_dim=1))
+
         model.Gaussian_noise.variance.fix(0)
         model.optimize(messages=False,max_f_eval=1000)
 
         ref_dirs = get_reference_directions("das-dennis", problem.n_obj, n_partitions=100)
         hypervolume_convergence = []
         for i in range(n_iterations):
+
+            # Hypervolume performance.
             ref_point = self.max_point
             HV_ind = HV(ref_point=ref_point)
             hv = HV_ind(ysample)
             hypervolume_convergence.append(hv)
+
             # Identify the current best sample, used for search.
             current_best = aggregated_samples[np.argmin(aggregated_samples)]
-
-            # model.fit(Xsample, aggregated_samples)
-            model = GPy.models.GPRegression(Xsample, np.reshape(aggregated_samples, (-1,1)), GPy.kern.Matern52(self.n_vars,ARD=True))
-            # model = GPy.models.GPRegression(Xsample,ys, GPy.kern.Bias(input_dim=1) * GPy.kern.RBF(input_dim=1))
-            model.Gaussian_noise.variance.fix(0)
-
             
+            # Reconstruct model.
+            model = GPy.models.GPRegression(Xsample, np.reshape(aggregated_samples, (-1,1)), GPy.kern.Matern52(self.n_vars,ARD=True))
+            model.Gaussian_noise.variance.fix(0)
             model.optimize(messages=False,max_f_eval=1000)
 
             # use the model, current best to get the next x value to evaluate.
@@ -415,21 +418,19 @@ class MonoSurrogateOptimiser:
             # Evaluate that point to get its objective values.
             next_y = self._objective_function(problem, next_X)
 
-            # add the new sample
+            # add the new sample to archive.
             ysample = np.vstack((ysample, next_y))
 
             ref_dir = ref_dirs[np.random.randint(0,len(ref_dirs))]
-            # print("Selected weight: "+str(ref_dir))
 
+            # Aggregate new sample
             agg = aggregation_func(next_y, ref_dir)
 
-            aggregated_samples = np.append(aggregated_samples, agg)
-
-            # Add the variables into the archives.
+            # Update archive.
+            aggregated_samples = np.append(aggregated_samples, agg)          
             Xsample = np.vstack((Xsample, next_X))
         
         pf_approx = util_functions.calc_pf(ysample)
-
         if display_pareto_front and problem.n_obj == 2:
             plt.scatter(ysample[5:,0], ysample[5:,1], color="red", label="Samples.")
             plt.scatter(ysample[0:n_init_samples,0], ysample[0:n_init_samples,1], color="blue", label="Initial samples.")
@@ -446,9 +447,13 @@ class MonoSurrogateOptimiser:
             ax1.scatter(pf_approx[:,0], pf_approx[:,1], pf_approx[:,2], color="green", label="PF approximation.")
             ax1.scatter(ysample[-1:-5:-1,0], ysample[-1:-5:-1,1], ysample[-1:-5:-1,2], color="black", label="Last 5 samples.")
             ax2.scatter(pf_approx[:,0], pf_approx[:,1], pf_approx[:,2], color="green", label="PF approximation.")
-            # ax.xlabel(r"$f_1(x)$")
-            # ax.ylabel(r"$f_2(x)$")
-            # ax.legend()
+            ax1.set_xlabel(r"$f_1(x)$")
+            ax1.set_ylabel(r"$f_2(x)$")
+            ax1.set_zlabel(r"$f_3(x)$")
+            ax2.set_xlabel(r"$f_1(x)$")
+            ax2.set_ylabel(r"$f_2(x)$")
+            ax2.set_zlabel(r"$f_3(x)$")
+            ax1.legend()
             plt.show()
 
         # Find the inputs that correspond to the pareto front.
