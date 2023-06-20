@@ -1,5 +1,5 @@
 # OptiMOBO
-Solve multi-objective problems using multi-objective bayesian optimisation (MOBO).
+Solve multi-objective optimisation problems using multi-objective bayesian optimisation (MOBO).
 
 This repo contains implementations of two MOBO methods. They are designed to solve minimisation problems with two or three objectives, constraints are not supported.
 The methods include:
