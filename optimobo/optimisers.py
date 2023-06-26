@@ -103,7 +103,7 @@ class MultiSurrogateOptimiser:
 
         """
         def obj(X):
-            return -function(X, models, ideal_point, max_point, pf, cache)
+            return -function(X, models, max_point, pf, cache)
 
         # x = [(bounds[0], bounds[1])] * n_var
         # x = list(zip(self.lower, self.upper))

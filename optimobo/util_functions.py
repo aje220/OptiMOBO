@@ -5,45 +5,46 @@ from pygmo import fast_non_dominated_sorting, hypervolume
 import GPy
 
 
-def expected(X, models, agg_func, cache, weights):
+# def expected(X, models, agg_func, cache, weights):
+#     """
+#     I cant remember why i wrote this function, i should probably delete it.
+ 
+#     """
 
-    predicitions = []
-    for i in models:
-        # import pdb; pdb.set_trace()
-        output = i.predict(np.asarray([X]))
-        predicitions.append(output)
+#     predicitions = []
+#     for i in models:
+#         # import pdb; pdb.set_trace()
+#         output = i.predict(np.asarray([X]))
+#         predicitions.append(output)
 
-    # mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
-    # sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
-    # print(mu)
-    # print(sigma)
+#     dimensions = len(models)
 
-    # Translate the samples to the correct position
-    sample_values = change(predicitions, cache)
+#     # Translate the samples to the correct position
+#     sample_values = change(predicitions, cache, dimensions)
 
-    n_samples = len(sample_values)
+#     n_samples = len(sample_values)
 
-    # PBI values of all the points sampled from the distribution.
-    aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
+#     # PBI values of all the points sampled from the distribution.
+#     aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
 
-    # import pdb; pdb.set_trace()
+#     total = np.mean(aggregated_samples)
+#     std = np.std(aggregated_samples)
 
-    # total = np.mean(np.maximum(np.zeros((n_samples,1)), agg_function_min - aggregated_samples ))
-    # print(total)
+#     # Calculate twice the standard deviation
+#     twice_std = 2 * std
 
-    total = np.mean(aggregated_samples)
-    std = np.std(aggregated_samples)
+#     upper_bound = total + twice_std
+#     lower_bound = total - twice_std
 
-# Calculate twice the standard deviation
-    twice_std = 2 * std
-
-    upper_bound = total + twice_std
-    lower_bound = total - twice_std
+#     return total, upper_bound, lower_bound
 
 
-    return total, upper_bound, lower_bound
-
-def generate_latin_hypercube_samples(num_samples, variable_ranges):
+def generate_latin_hypercube_samples(num_samples: int, variable_ranges: list[float]):
+    """
+    Function that generates latin hypercube samples.
+    Params:
+        num_samples : int
+    """
     num_vars = len(variable_ranges)
     samples = np.empty((num_samples, num_vars))
 
@@ -55,7 +56,8 @@ def generate_latin_hypercube_samples(num_samples, variable_ranges):
 
     return samples
 
-def calc_pf(Y):
+
+def calc_pf(Y: list[float]):
     """
     For a bi-objective minimisation problem, this function computes the pareto front via non-dominated sorting.
     Y:  a set of points within an objective space. numpy array in the form: (n_points x n_dimensions) 
@@ -122,18 +124,21 @@ def psi_cal(a,b,m,s):
     # import pdb; pdb.set_trace()
     return s*stats.norm.pdf(t[0]) + (a - m)*stats.norm.cdf(t[0])
 
-def EHVI(X, models, ideal_point, max_point, PF, cache):
+
+def EHVI(X, models, max_point, PF, cache):
     """
     Calculate Expected hypervolume improvement of a point given the current solutions.
+    This is for 2d objective spaces.
     
     Params:
-        X, solution vector
-        models, list of sklearn gaussian processes built on each objective.
-        ysample, current set of solutions
+        X, solution vector, numpy array.
+        models, array of sklearn gaussian processes built on each objective.
+        max_point, coordinates of a maximum point, a reference point.
+        PF, current pareto front approximation, array of coordinates.
         cache, array of samples that are translated and then evaluated.
 
     Return: 
-        The expected hypervolume improvement of the objective vector X.
+        The expected hypervolume improvement of the objective vector X. Float.
 
     """
     # n_samples = 1024
@@ -148,14 +153,27 @@ def EHVI(X, models, ideal_point, max_point, PF, cache):
 
     samples_vals = np.asarray(sample_values)
     cov = np.cov(samples_vals[:,0], samples_vals[:,1])
-    # PF = calc_pf(ysample)
     r = max_point
     mu = np.asarray([predictions[0][0][0], predictions[1][0][0]])
-    # sigma = np.asarray([[predicitions[0][1][0], 0],[0, predicitions[0][1][0]]])
-    # sigma = predicitions[0][1][0]
+
     return(EHVI_2D_aux(PF, r, mu, cov))
 
-def EHVI_3D(X, models, ideal_point, max_point, PF, cache):
+
+def EHVI_3D(X, models, max_point, PF, cache):
+    """
+    Calculate EHVI in a 3d objective space.
+    Calculate Expected hypervolume improvement of a point given the current solutions.
+    
+    Params:
+        X, solution vector, numpy array.
+        models, array of sklearn gaussian processes built on each objective.
+        max_point, coordinates of a maximum point, a reference point.
+        PF, current pareto front approximation, array of coordinates.
+        cache, array of samples that are translated and then evaluated.
+
+    Return: 
+        The expected hypervolume improvement of the objective vector X. Float.
+    """
 
     predictions = []
     for i in models:
@@ -164,18 +182,9 @@ def EHVI_3D(X, models, ideal_point, max_point, PF, cache):
         predictions.append(output)
 
     dimensions = len(models)
-
     sample_values = change(predictions, cache, dimensions)
 
     samples_vals = np.asarray(sample_values)
-    # import pdb; pdb.set_trace()
-    # cov = np.cov(samples_vals[:,0], samples_vals[:,1], samples_vals[:,2])
-    # PF = calc_pf(ysample)
-    # r = max_point
-    # mu = np.asarray([predictions[0][0][0], predictions[1][0][0]], predictions[2][0][0])
-    # sigma = np.asarray([[predicitions[0][1][0], 0],[0, predicitions[0][1][0]]])
-    # sigma = predicitions[0][1][0]
-    # import pdb; pdb.set_trace()
 
     answer = 0
     hv = hypervolume(PF)
@@ -184,13 +193,9 @@ def EHVI_3D(X, models, ideal_point, max_point, PF, cache):
 
     for i in samples_vals:
 
-        # hvol = (i[0] - max_point[0]) * (i[1] - max_point[1]) * (i[2] - max_point[2])
         hvol = (max_point[0] - i[0]) * (max_point[1] - i[1]) * (max_point[2] - i[2])
         hv_one = hypervolume([i])
         hvol = hv_one.compute(max_point)
-        # bounded by r (from below) and candidate.f (from above).
-        # Sminus = hvol3d(P, r, candidate.f)
-        # import pdb; pdb.set_trace()
 
         hvol -= Sminus
 
@@ -200,54 +205,33 @@ def EHVI_3D(X, models, ideal_point, max_point, PF, cache):
     # print(answer)
     return answer / len(samples_vals)
 
+
 def change(predicitions, samples, dimensions):
     """
-    This function takes the predictions from both models, along with some pre generated uniform random samples.
+    This function takes the predictions from the models, along with some pre generated uniform random samples.
     It returns normally distributed samples with the mean in predictions and a covariance matrix given in predicitions.
-    mu; vector of means
-
-    sigma; covariance matrix
-
-    samples; uniform samples
-    """
     
-    # get the means and standard deviations
-    # mu1 = predicitions[0][0][0]
-    # mu2 = predicitions[1][0][0]
+    Params:
+        predictions, array containing means and standard deviations from multiple gaussian processes.
+        samples, cached sobol samples that will be translated to match the mean and variance of the predictions.
+        dimensions, the number of dimensions the samples are in, the number of predictions.
+        
+
+    returns:
+        array of coordinates, normally distributed samples with a mean and variance taken from the predictions.
+    """
 
     mus = [predicitions[i][0][0] for i in range(dimensions)]
-
-    # sigma1 = predicitions[0][1][0]
-    # sigma2 = predicitions[0][1][0]
-
     sigmas = [predicitions[0][1][0] for i in range(dimensions)]
     
-    # import pdb; pdb.set_trace()
-
-    # transform the 
-    # Scale and shift the normal distribution to match the desired mean and standard deviation
-    # scaled_samples1 = samples[:,0] * np.sqrt(sigma1) + mu1
-    # scaled_samples2 = samples[:,1] * np.sqrt(sigma2) + mu2
-
     scaled_samples = [samples[:,i] * np.sqrt(sigmas[i]) + mus[i] for i in range(dimensions)]
 
-
-
-    # import pdb; pdb.set_trace()
-
-
-
-    # return list(map(np.asarray, zip(scaled_samples1, scaled_samples2)))
-    # return np.stack((scaled_samples1,scaled_samples2), axis = 1)
     return np.asarray(scaled_samples).T
 
     # return list(zip(scaled_samples1, scaled_samples2))
 
 
 ################################################################################
-"""
-Scalarisation functions.
-"""
 
 def ei_over_decomposition(X, models, weights, agg_func, minimum_current_val, n_samples):
     """
@@ -317,10 +301,6 @@ def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache
         output = i.predict(np.asarray([X]))
         predicitions.append(output)
 
-    # mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
-    # sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
-    # print(mu)
-    # print(sigma)
 
     dimensions = len(models)
     # Translate the samples to the correct position
@@ -331,122 +311,120 @@ def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache
     # PBI values of all the points sampled from the distribution.
     aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
 
-    # import pdb; pdb.set_trace()
-
     total = np.mean(np.maximum(np.zeros((n_samples,1)), agg_function_min - aggregated_samples ))
     # print(total)
 
     return total
 
 
-def chebyshev(f, W, ideal_point, max_point):
+# def chebyshev(f, W, ideal_point, max_point):
     
-    nobjs = 2
+#     nobjs = 2
 
-    objs = [(f[i]-ideal_point[i])/(max_point[i]-ideal_point[i]) for i in range(nobjs)]
+#     objs = [(f[i]-ideal_point[i])/(max_point[i]-ideal_point[i]) for i in range(nobjs)]
 
-    return max([W[i]*(objs[i]) for i in range(nobjs)])
-
-
-def ei_cheb_aux(sample_values, weights, ideal_point, max_point, TCH_min):
-    """
-    This helper function handles the creation of the samples around each point. It computes EI over Tchebycheff
-    mu: mean vector
-    sigma: vector of variances
-    """
-    n_samples = len(sample_values)
-
-    TCHs = np.asarray([chebyshev(x, weights, ideal_point, max_point) for x in np.asarray(sample_values)])
-
-    total = np.mean(np.maximum(np.zeros((n_samples,1)), TCH_min - TCHs ))
-    return total
-
-def EITCH(X, models, weights, ideal_point, max_point, min_tch, cache):
-    """
-    Example input ETCH(objective_value, models, [0.5,0.5], [-1.7,-1.9], [3,3])
-
-    X represents some singular multi-objective function value. This function computes the 
-    expected Tchebycheff at that point.
-    """
-
-    # get some point and find its mean and std for both models
-    predicitions = []
-    for i in models:
-        output = i.predict(np.asarray([X]), return_std=True)
-        predicitions.append(output)
-
-    mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
-    sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
-
-    sample_values = change(predicitions, cache)
-    return ei_cheb_aux(sample_values, weights, ideal_point, max_point, min_tch)
+#     return max([W[i]*(objs[i]) for i in range(nobjs)])
 
 
+# def ei_cheb_aux(sample_values, weights, ideal_point, max_point, TCH_min):
+#     """
+#     This helper function handles the creation of the samples around each point. It computes EI over Tchebycheff
+#     mu: mean vector
+#     sigma: vector of variances
+#     """
+#     n_samples = len(sample_values)
 
-def PBI(f, W, ideal_point, max_point):
-    # import pdb; pdb.set_trace()
-    objs = [(f[i]-np.asarray(ideal_point)[i])/(np.asarray(max_point)[i]-np.asarray(ideal_point)[i]) for i in range(2)]
+#     TCHs = np.asarray([chebyshev(x, weights, ideal_point, max_point) for x in np.asarray(sample_values)])
+
+#     total = np.mean(np.maximum(np.zeros((n_samples,1)), TCH_min - TCHs ))
+#     return total
+
+# def EITCH(X, models, weights, ideal_point, max_point, min_tch, cache):
+#     """
+#     Example input ETCH(objective_value, models, [0.5,0.5], [-1.7,-1.9], [3,3])
+
+#     X represents some singular multi-objective function value. This function computes the 
+#     expected Tchebycheff at that point.
+#     """
+
+#     # get some point and find its mean and std for both models
+#     predicitions = []
+#     for i in models:
+#         output = i.predict(np.asarray([X]), return_std=True)
+#         predicitions.append(output)
+
+#     mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
+#     sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
+
+#     sample_values = change(predicitions, cache)
+#     return ei_cheb_aux(sample_values, weights, ideal_point, max_point, min_tch)
+
+
+
+# def PBI(f, W, ideal_point, max_point):
+#     # import pdb; pdb.set_trace()
+#     objs = [(f[i]-np.asarray(ideal_point)[i])/(np.asarray(max_point)[i]-np.asarray(ideal_point)[i]) for i in range(2)]
     
-    # trans_f = f - f_ideal # translated objective values 
-    # print(W)
-    # W = [0.5,0.5]
-    # import pdb; pdb.set_trace()
+#     # trans_f = f - f_ideal # translated objective values 
+#     # print(W)
+#     # W = [0.5,0.5]
+#     # import pdb; pdb.set_trace()
 
-    W = np.reshape(W,(1,-1))
-    normW = np.linalg.norm(W, axis=1) # norm of weight vectors    
-    normW = normW.reshape(-1,1)
-    # import pdb; pdb.set_trace()
-    d_1 = np.sum(np.multiply(objs,np.divide(W,normW)),axis=1)
-    d_1 = d_1.reshape(-1,1)
+#     W = np.reshape(W,(1,-1))
+#     normW = np.linalg.norm(W, axis=1) # norm of weight vectors    
+#     normW = normW.reshape(-1,1)
+#     # import pdb; pdb.set_trace()
+#     d_1 = np.sum(np.multiply(objs,np.divide(W,normW)),axis=1)
+#     d_1 = d_1.reshape(-1,1)
     
-    # import pdb; pdb.set_trace()
+#     # import pdb; pdb.set_trace()
 
-    d_2 = np.linalg.norm(objs - d_1*np.divide(W,normW),axis=1)
-    d_1 = d_1.reshape(-1) 
-    PBI = d_1 + 5*d_2 # PBI with theta = 5    
-    PBI = PBI.reshape(-1,1)
-    return PBI[0]
-
-
+#     d_2 = np.linalg.norm(objs - d_1*np.divide(W,normW),axis=1)
+#     d_1 = d_1.reshape(-1) 
+#     PBI = d_1 + 5*d_2 # PBI with theta = 5    
+#     PBI = PBI.reshape(-1,1)
+#     return PBI[0]
 
 
-def EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min):
-    """
-    mu: mean vector
-    sigma: vector of variances
-    """
-    n_samples = len(sample_values)
-
-    # PBI values of all the points sampled from the distribution.
-    PBIs = np.asarray([PBI(x, weights, ideal_point, max_point) for x in sample_values])
-
-    # import pdb; pdb.set_trace()
-
-    total = np.mean(np.maximum(np.zeros((n_samples,1)), PBI_min - PBIs ))
-    # print(total)
-
-    return total
-
-def EIPBI(X, models, weights, ideal_point, max_point, PBI_min, cache):
-    """
-    """
-
-    # get some point and find its mean and std for both models
-    predicitions = []
-    for i in models:
-        # import pdb; pdb.set_trace()
-        output = i.predict(np.asarray([X]), return_std=True)
-        predicitions.append(output)
-
-    mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
-    sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
-    # print(mu)
-    # print(sigma)
-
-    dimensions = len(models)
-
-    sample_values = change(predicitions, cache, dimensions)
 
 
-    return EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min)
-# print(expected_decomposition(X, models, weights, agg_func, agg_function_min, cache))
+# def EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min):
+#     """
+#     mu: mean vector
+#     sigma: vector of variances
+#     """
+#     n_samples = len(sample_values)
+
+#     # PBI values of all the points sampled from the distribution.
+#     PBIs = np.asarray([PBI(x, weights, ideal_point, max_point) for x in sample_values])
+
+#     # import pdb; pdb.set_trace()
+
+#     total = np.mean(np.maximum(np.zeros((n_samples,1)), PBI_min - PBIs ))
+#     # print(total)
+
+#     return total
+
+# def EIPBI(X, models, weights, ideal_point, max_point, PBI_min, cache):
+#     """
+#     """
+
+#     # get some point and find its mean and std for both models
+#     predicitions = []
+#     for i in models:
+#         # import pdb; pdb.set_trace()
+#         output = i.predict(np.asarray([X]), return_std=True)
+#         predicitions.append(output)
+
+#     mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
+#     sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
+#     # print(mu)
+#     # print(sigma)
+
+#     dimensions = len(models)
+
+#     sample_values = change(predicitions, cache, dimensions)
+
+
+#     return EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min)
+# # print(expected_decomposition(X, models, weights, agg_func, agg_function_min, cache))
