@@ -90,7 +90,14 @@ Their contours can be seen here:
 ![ScalarisationContours](docs/media/scalarisations.png "Contours of the scalarisation functions, in 2D.")
 
 #### Experimental Parameters
-Various experimental parameters can be customised.
+Various experimental parameters can be customised:
+* Number of iterations
+* Number of initial samples
+* Number of samples used from the multi-variate distributions (multi-surrogate)
+
+#### Visualisation
+By enabling ```display_pareto_front``` the program will plot the objective space of the problem once the termination condition has been met.
+
 
 
 ## Requirements
