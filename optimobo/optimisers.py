@@ -44,7 +44,11 @@ class MultiSurrogateOptimiser:
 
     def _objective_function(self, problem, x):
         """
-        Wrapper function to just evaluate the objective functions.
+        Wrapper for the objective function, makes my code clearer.
+        Returns objective values.
+        Params:
+            problem: Problem object
+            x: input 
         """
         return problem.evaluate(x)
 
@@ -109,12 +113,19 @@ class MultiSurrogateOptimiser:
         return res.x, res.fun
 
     def _get_cached_samples(self, dimensions, sample_exponent):
+        """
+        Generates a selected number of normally distibuted sobol samples, these samples are transformed.
+        This is done so that 
+        
+        dimensions:
+            number of dimensions the samples are generated within
+        sample_exponent:
+            The number of samples generated is a power of 2. This param sets the exponent of 2.
+        
+        returns: a np array of arrays. Contains normally distributed sobol samples.
+        """
         sampler = qmc.Sobol(d=dimensions, scramble=True)
         sample = sampler.random_base2(m=sample_exponent)
-        # norm_samples1 = norm.ppf(sample[:,0])
-        # norm_samples2 = norm.ppf(sample[:,1])
-
-        # all_slices = [list(slice) for slice in zip(*sample)]
         
 
         norm_samples = [norm.ppf(sample[:,i]) for i in range(dimensions)]
@@ -218,10 +229,6 @@ class MultiSurrogateOptimiser:
             # Update archive.
             Xsample = np.vstack((Xsample, X_next))
 
-        # Get hypervolume metric.
-        # ref_point = self.max_point
-        # HV_ind = HV(ref_point=ref_point)
-        # hv = HV_ind(ysample)
 
         pf_approx = util_functions.calc_pf(ysample)
 
@@ -251,9 +258,6 @@ class MultiSurrogateOptimiser:
             ax2.set_xlabel(r"$f_1(x)$")
             ax2.set_ylabel(r"$f_2(x)$")
             ax2.set_zlabel(r"$f_3(x)$")
-            
-            # ax.xlabel(r"$f_1(x)$")
-            # ax.ylabel(r"$f_2(x)$")
             ax1.legend()
             plt.show()
 
@@ -292,6 +296,14 @@ class MonoSurrogateOptimiser:
 
 
     def _objective_function(self, problem, x):
+        """
+        Wrapper for the objective function, makes my code clearer.
+        Returns objective values.
+
+        Params:
+            problem: Problem object
+            x: input 
+        """
         return problem.evaluate(x)
 
     def _expected_improvement(self, X, model, opt_value, kappa=0.01):
@@ -302,7 +314,7 @@ class MonoSurrogateOptimiser:
             EI: The Expected improvement of X over the opt_value given the information
                 from the model.
         """
-        # import pdb; pdb.set_trace()
+
         # get the mean and s.d. of the proposed point
         X_aux = X.reshape(1, -1)
         mu_x, sigma_x = model.predict(X_aux)
@@ -310,11 +322,7 @@ class MonoSurrogateOptimiser:
         sigma_x = np.sqrt(sigma_x)
         mu_x = mu_x[0]
         sigma_x = sigma_x[0]
-        # compute EI at that point
-        # gamma_x = (mu_x - opt_value - kappa) / (sigma_x + 1e-10)
-        # ei = sigma_x * (gamma_x * norm.cdf(gamma_x) + norm.pdf(gamma_x))
 
-        # return ei.flatten()
         gamma_x = (opt_value - mu_x) / (sigma_x + 1e-10)
         ei = sigma_x * (gamma_x * norm.cdf(gamma_x) + norm.pdf(gamma_x))
         return ei.flatten()        
