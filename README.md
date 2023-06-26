@@ -37,7 +37,7 @@ out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=2
 
 Will return a Pareto set approximation:
 
-![MyProblem](docs/media/dadsdaa.png "MyProblem Pareto Approximation")
+![MyProblem](docs/media/Myprobkem.png "MyProblem Pareto Approximation")
 
 For the multi-objective benchmark problem DTLZ5:
 ```python
@@ -49,7 +49,7 @@ out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=2
 
 Will return:
 
-![DTLZ5](docs/media/adwdawdssss.png "DTLZ5 Pareto front approximation")
+![DTLZ5](docs/media/DTLZ.png "DTLZ5 Pareto front approximation")
 
 
 
@@ -74,18 +74,20 @@ In mono-surrogate MOBO, scalarisation functions are used to aggregate objective 
 In multi-surrogate MOBO, scalarisation functions are used as convergence measures to select sample points.
 This package contains 10 scalarisation functions that can be used in the above mentioned contexts.
 Options Include:
-* Weighted Sum
-* Tchebicheff
-* Modified Tchebicheff
-* Augmented Tchebicheff
-* Weighted Norm
-* Weighted Power
-* Weighted Product
+* Weighted Sum (WS)
+* Tchebicheff (TCH)
+* Modified Tchebicheff (MTCH)
+* Augmented Tchebicheff (ATCH)
+* Weighted Norm (WN)
+* Weighted Power (WPO)
+* Weighted Product (WPR)
 * PBI
 * IPBI
-* Exponential Weighted Criterion
+* Exponential Weighted Criterion (EWC)
 
 They are written so they can be used in any context.
+Their contours can be seen here:
+![ScalarisationContours](docs/media/scalarisations.png "Contours of the scalarisation functions, in 2D.")
 
 #### Experimental Parameters
 Various experimental parameters can be customised.
