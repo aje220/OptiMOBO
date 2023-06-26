@@ -37,7 +37,7 @@ out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=2
 
 Will return a Pareto set approximation:
 
-![MyProblem](docs/media/Myprobkem.png "MyProblem Pareto Approximation")
+![MyProblem](docs/media/Myproblem.png "MyProblem Pareto Approximation")
 
 For the multi-objective benchmark problem DTLZ5:
 ```python
