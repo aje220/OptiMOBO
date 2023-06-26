@@ -62,7 +62,7 @@ The output `results` is a tuple containing:
 
 When calling the ```optimiser.solve``` function for a ```MonoSurrogateOptimiser``` object, an aggregation function must be defined.
 
-For a ```MultiSurrogateOptimiser``` object an aggregation function can be chosen as a convergence measure; however, if left default, the optimiser will use Expected Hypervolume Improvement (EHVI) to solve the problem.
+For a ```MultiSurrogateOptimiser``` object an aggregation function can be chosen as a convergence measure. However, if left default, the optimiser will use Expected Hypervolume Improvement (EHVI) to solve the problem.
 
 ## Installation
 Can be installed via:
