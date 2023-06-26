@@ -96,7 +96,7 @@ Various experimental parameters can be customised:
 * Number of samples used from the multi-variate distributions (multi-surrogate)
 
 #### Visualisation
-By enabling ```display_pareto_front``` the program will plot the objective space of the problem once the termination condition has been met.
+By setting ```display_pareto_front=True``` on the ```optimiser.solve``` method, the program will use matplotlib to display the objective space of the problem once the termination condition has been met.
 
 
 
