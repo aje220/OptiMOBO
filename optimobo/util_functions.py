@@ -309,7 +309,9 @@ def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache
     n_samples = len(sample_values)
 
     # PBI values of all the points sampled from the distribution.
-    aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
+    # aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
+    aggregated_samples = agg_func(sample_values, weights)
+
 
     total = np.mean(np.maximum(np.zeros((n_samples,1)), agg_function_min - aggregated_samples ))
     # print(total)
@@ -317,114 +319,4 @@ def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache
     return total
 
 
-# def chebyshev(f, W, ideal_point, max_point):
-    
-#     nobjs = 2
 
-#     objs = [(f[i]-ideal_point[i])/(max_point[i]-ideal_point[i]) for i in range(nobjs)]
-
-#     return max([W[i]*(objs[i]) for i in range(nobjs)])
-
-
-# def ei_cheb_aux(sample_values, weights, ideal_point, max_point, TCH_min):
-#     """
-#     This helper function handles the creation of the samples around each point. It computes EI over Tchebycheff
-#     mu: mean vector
-#     sigma: vector of variances
-#     """
-#     n_samples = len(sample_values)
-
-#     TCHs = np.asarray([chebyshev(x, weights, ideal_point, max_point) for x in np.asarray(sample_values)])
-
-#     total = np.mean(np.maximum(np.zeros((n_samples,1)), TCH_min - TCHs ))
-#     return total
-
-# def EITCH(X, models, weights, ideal_point, max_point, min_tch, cache):
-#     """
-#     Example input ETCH(objective_value, models, [0.5,0.5], [-1.7,-1.9], [3,3])
-
-#     X represents some singular multi-objective function value. This function computes the 
-#     expected Tchebycheff at that point.
-#     """
-
-#     # get some point and find its mean and std for both models
-#     predicitions = []
-#     for i in models:
-#         output = i.predict(np.asarray([X]), return_std=True)
-#         predicitions.append(output)
-
-#     mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
-#     sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
-
-#     sample_values = change(predicitions, cache)
-#     return ei_cheb_aux(sample_values, weights, ideal_point, max_point, min_tch)
-
-
-
-# def PBI(f, W, ideal_point, max_point):
-#     # import pdb; pdb.set_trace()
-#     objs = [(f[i]-np.asarray(ideal_point)[i])/(np.asarray(max_point)[i]-np.asarray(ideal_point)[i]) for i in range(2)]
-    
-#     # trans_f = f - f_ideal # translated objective values 
-#     # print(W)
-#     # W = [0.5,0.5]
-#     # import pdb; pdb.set_trace()
-
-#     W = np.reshape(W,(1,-1))
-#     normW = np.linalg.norm(W, axis=1) # norm of weight vectors    
-#     normW = normW.reshape(-1,1)
-#     # import pdb; pdb.set_trace()
-#     d_1 = np.sum(np.multiply(objs,np.divide(W,normW)),axis=1)
-#     d_1 = d_1.reshape(-1,1)
-    
-#     # import pdb; pdb.set_trace()
-
-#     d_2 = np.linalg.norm(objs - d_1*np.divide(W,normW),axis=1)
-#     d_1 = d_1.reshape(-1) 
-#     PBI = d_1 + 5*d_2 # PBI with theta = 5    
-#     PBI = PBI.reshape(-1,1)
-#     return PBI[0]
-
-
-
-
-# def EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min):
-#     """
-#     mu: mean vector
-#     sigma: vector of variances
-#     """
-#     n_samples = len(sample_values)
-
-#     # PBI values of all the points sampled from the distribution.
-#     PBIs = np.asarray([PBI(x, weights, ideal_point, max_point) for x in sample_values])
-
-#     # import pdb; pdb.set_trace()
-
-#     total = np.mean(np.maximum(np.zeros((n_samples,1)), PBI_min - PBIs ))
-#     # print(total)
-
-#     return total
-
-# def EIPBI(X, models, weights, ideal_point, max_point, PBI_min, cache):
-#     """
-#     """
-
-#     # get some point and find its mean and std for both models
-#     predicitions = []
-#     for i in models:
-#         # import pdb; pdb.set_trace()
-#         output = i.predict(np.asarray([X]), return_std=True)
-#         predicitions.append(output)
-
-#     mu = np.asarray([predicitions[0][0][0], predicitions[1][0][0]])
-#     sigma = np.asarray([predicitions[0][1][0], predicitions[0][1][0]])
-#     # print(mu)
-#     # print(sigma)
-
-#     dimensions = len(models)
-
-#     sample_values = change(predicitions, cache, dimensions)
-
-
-#     return EIPBI_aux(sample_values, weights, ideal_point, max_point, PBI_min)
-# # print(expected_decomposition(X, models, weights, agg_func, agg_function_min, cache))
