@@ -85,9 +85,11 @@ Options Include:
 * Weighted Norm (WN)
 * Weighted Power (WPO)
 * Weighted Product (WPR)
-* PBI
-* IPBI
+* Penality Boundary Intersection (PBI)
+* Inverted PBI (IPBI)
+* Quadratic PBI (QPBI)
 * Exponential Weighted Criterion (EWC)
+* Angle Penalised Distance (APD)
 
 They are written so they can be used in any context.
 Their contours can be seen here:
