@@ -111,7 +111,7 @@ class AugmentedTchebicheff(Scalarisation):
 
     def _do(self, F, weights):
 
-        obj = F
+        # obj = F
         obj = (np.asarray(F) - np.asarray(self.ideal_point)) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))
 
         if np.ndim(F) == 2:
@@ -152,13 +152,18 @@ class ModifiedTchebicheff(Scalarisation):
 
         if np.ndim(F) == 2:
             left = np.abs(obj - self.ideal_point)
-            left = np.abs(obj - self.ideal_point / (np.asarray(self.max_point) - np.asarray(self.ideal_point)))
+            # left = np.abs(obj - self.ideal_point / (np.asarray(self.max_point) - np.asarray(self.ideal_point)))
 
-            # right = self.alpha*(np.sum(np.abs(obj - self.ideal_point), axis=1))
-            right = self.alpha*(np.sum(np.abs((obj - self.ideal_point) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))), axis=1))
+            right = self.alpha*(np.sum(np.abs(obj - self.ideal_point), axis=1))
+            # right = self.alpha*(np.sum(np.abs((obj - self.ideal_point) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))), axis=1))
+            # right = self.alpha*(np.sum(np.abs((obj - self.ideal_point) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))), axis=1))
 
+
+            # total = (left + right)*weights
             total = (left + np.reshape(right, (-1,1)))*weights
+
             tchebi = total.max(axis=1)
+            # import pdb; pdb.set_trace()
             return tchebi
         else:
             left = np.abs(obj - self.ideal_point)
@@ -387,6 +392,52 @@ class IPBI(Scalarisation):
         PBI = PBI.reshape(-1,1)
 
         return PBI
+
+
+class QPBI(Scalarisation):
+
+    # more testing required.
+
+    def __init__(self, ideal_point, max_point, theta=5, alpha=5.0, H=5.0) -> None:
+        super().__init__()
+        self.theta = theta
+        self.ideal_point = ideal_point
+        self.max_point = max_point
+        self.alpha = alpha
+        self.H = H
+
+    
+    def _do(self, f, weights):
+
+        k = len(f)
+
+        objs = (np.asarray(f) - np.asarray(self.ideal_point)) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))
+
+        # objs = f
+
+        W = np.reshape(weights,(1,-1))
+        normW = np.linalg.norm(W, axis=1) # norm of weight vectors    
+        normW = normW.reshape(-1,1)
+
+        d_1 = np.sum(np.multiply(objs,np.divide(W,normW)),axis=1)
+        # import pdb; pdb.set_trace()
+        d_1 = d_1.reshape(-1,1)
+
+        d_2 = np.linalg.norm(objs - d_1*np.divide(W,normW),axis=1)
+        
+
+        d_1 = d_1.reshape(-1) 
+
+        # import pdb; pdb.set_trace()
+        d_star = self.alpha*(np.reciprocal(float(self.H))*np.reciprocal(float(k))*np.sum(np.asarray(self.max_point) - np.asarray(self.ideal_point)))
+
+        # PBI with theta = 5    
+        ret = d_1 + self.theta*d_2*(d_2/d_star)
+        ret = np.reshape(ret, (-1,1))
+        return ret
+
+
+
 
 
 class APD(Scalarisation):
