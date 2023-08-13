@@ -409,15 +409,35 @@ class QPBI(Scalarisation):
     
     def _do(self, f, weights):
 
-        k = len(f)
+        k = None
+        # print(str(np.ndim(f)) + " "+ str(d_2))
 
-        objs = (np.asarray(f) - np.asarray(self.ideal_point)) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))
+        if np.ndim(f) == 2:
+            k  = len(f[0])
+            objs = (np.asarray(f) - self.ideal_point)/(np.asarray(self.max_point) - np.asarray(self.ideal_point))
+            # print(str(np.ndim(f)) + " "+ str(objs))
+            # print(f[0][0])
+            # print(objs[0][0])
+        else:
+            k = len(f)
+            objs = np.asarray([[(f[i]-np.asarray(self.ideal_point)[i])/(np.asarray(self.max_point)[i]-np.asarray(self.ideal_point)[i]) for i in range(k)]])
+            # objs = [(f[i]-np.asarray(self.ideal_point)[i])/(np.asarray(self.max_point)[i]-np.asarray(self.ideal_point)[i]) for i in range(len(f))]
+            # print(str(np.ndim(f)) + " "+ str(objs))
+            # print(f[0])
+            # print(objs[0][0])
 
+        # print(str(np.ndim(f)) + " objs "+ str(k))
+        
+       
         # objs = f
 
         W = np.reshape(weights,(1,-1))
         normW = np.linalg.norm(W, axis=1) # norm of weight vectors    
         normW = normW.reshape(-1,1)
+
+        # print(str(np.ndim(f)) + " "+ str(W))
+        # print(str(np.ndim(f)) + " "+ str(normW))
+
 
         d_1 = np.sum(np.multiply(objs,np.divide(W,normW)),axis=1)
         # import pdb; pdb.set_trace()
@@ -425,12 +445,17 @@ class QPBI(Scalarisation):
 
         d_2 = np.linalg.norm(objs - d_1*np.divide(W,normW),axis=1)
         
+        # print(str(np.ndim(f)) + " "+ str(d_1))
+        # print(str(np.ndim(f)) + " "+ str(d_2))
 
         d_1 = d_1.reshape(-1) 
 
+
         # import pdb; pdb.set_trace()
         d_star = self.alpha*(np.reciprocal(float(self.H))*np.reciprocal(float(k))*np.sum(np.asarray(self.max_point) - np.asarray(self.ideal_point)))
-
+        
+        # print(str(np.ndim(f)) + " "+ str(d_star))
+        # print(str(np.ndim(f)) + " "+ str(d_1))
         # PBI with theta = 5    
         ret = d_1 + self.theta*d_2*(d_2/d_star)
         ret = np.reshape(ret, (-1,1))
@@ -450,13 +475,13 @@ class APD(Scalarisation):
     #     self.FE_max = FE_max
     #     self.gamma = gamma
     
-    def __init__(self, ideal_point, max_point):
+    def __init__(self, ideal_point, max_point, FE=1, FE_max=10, gamma=0.010304664101210016):
         super().__init__()
         self.ideal_point = ideal_point
         self.max_point = max_point
-        self.FE = 1
-        self.FE_max = 10
-        self.gamma = 0.010304664101210016
+        self.FE = FE
+        self.FE_max = FE_max
+        self.gamma = gamma
     
     def _unit_vector(self, vector):
         return vector / np.linalg.norm(vector)
