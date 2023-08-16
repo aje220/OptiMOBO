@@ -1,0 +1,51 @@
+import matplotlib.pyplot as plt
+
+
+class Res():
+
+
+    def __init__(self, pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, n_obj, n_init_samples):
+        self.pf_approx = pf_approx
+        self.pf_inputs = pf_inputs
+        self.ysample = ysample
+        self.Xsample = Xsample
+        self.hypervolume_convergence = hypervolume_convergence
+        self.n_obj = n_obj
+        self.n_init_samples = n_init_samples
+
+
+    
+    def pareto_front(self):
+        if self.n_obj == 2:
+            plt.scatter(self.ysample[5:,0], self.ysample[5:,1], color="red", label="Samples.")
+            plt.scatter(self.ysample[0:self.n_init_samples,0], self.ysample[0:self.n_init_samples,1], color="blue", label="Initial samples.")
+            plt.scatter(self.pf_approx[:,0], self.pf_approx[:,1], color="green", label="PF approximation.")
+            plt.scatter(self.ysample[-1:-5:-1,0], self.ysample[-1:-5:-1,1], color="black", label="Last 5 samples.")
+            plt.xlabel(r"$f_1(x)$")
+            plt.ylabel(r"$f_2(x)$")
+            plt.legend()
+            plt.show()
+        
+        elif self.n_obj == 3:
+
+            fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": "3d"})
+            ax1.scatter(self.ysample[5:,0], self.ysample[5:,1], self.ysample[5:,2], color="red", label="Samples.")
+            ax1.scatter(self.ysample[0:self.n_init_samples,0], self.ysample[0:self.n_init_samples,1], self.ysample[0:self.n_init_samples,2], color="blue", label="Initial samples.")
+            ax1.scatter(self.pf_approx[:,0], self.pf_approx[:,1], self.pf_approx[:,2], color="green", label="PF approximation.")
+            ax1.scatter(self.ysample[-1:-5:-1,0], self.ysample[-1:-5:-1,1], self.ysample[-1:-5:-1,2], color="black", label="Last 5 samples.")
+            ax2.scatter(self.pf_approx[:,0], self.pf_approx[:,1], self.pf_approx[:,2], color="green", label="PF approximation.")
+            ax1.set_xlabel(r"$f_1(x)$")
+            ax1.set_ylabel(r"$f_2(x)$")
+            ax1.set_zlabel(r"$f_3(x)$")
+            ax2.set_xlabel(r"$f_1(x)$")
+            ax2.set_ylabel(r"$f_2(x)$")
+            ax2.set_zlabel(r"$f_3(x)$")
+            ax1.legend()
+            plt.show()
+
+    def hv_convergence(self):
+        plt.plot(self.hypervolume_convergence)
+        plt.show()
+        return
+    
+    

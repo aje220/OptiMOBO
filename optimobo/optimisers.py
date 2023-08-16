@@ -13,6 +13,7 @@ from pymoo.indicators.hv import HV
 # from util_functions import EHVI, calc_pf, expected_decomposition
 # from . import util_functions
 import util_functions
+import result
 import GPy
 GPy.plotting.change_plotting_library('matplotlib')
 
@@ -135,7 +136,7 @@ class MultiSurrogateOptimiser:
         return cached_samples
 
     
-    def solve(self, n_iterations=100, display_pareto_front=False, n_init_samples=5, sample_exponent=5, acquisition_func=None):
+    def solve(self, n_iterations=100, n_init_samples=5, sample_exponent=5, acquisition_func=None):
         """
         This fcontains the main algorithm to solve the optimisation problem.
 
@@ -232,34 +233,6 @@ class MultiSurrogateOptimiser:
 
         pf_approx = util_functions.calc_pf(ysample)
 
-        # For displaying the Pareto Front.
-        if display_pareto_front and problem.n_obj == 2:
-
-            plt.scatter(ysample[5:,0], ysample[5:,1], color="red", label="Samples.")
-            plt.scatter(ysample[0:n_init_samples,0], ysample[0:n_init_samples,1], color="blue", label="Initial samples.")
-            plt.scatter(pf_approx[:,0], pf_approx[:,1], color="green", label="PF approximation.")
-            plt.scatter(ysample[-1:-5:-1,0], ysample[-1:-5:-1,1], color="black", label="Last 5 samples.")
-            plt.xlabel(r"$f_1(x)$")
-            plt.ylabel(r"$f_2(x)$")
-            plt.legend()
-            plt.show()
-        
-        elif display_pareto_front and problem.n_obj == 3:
-
-            fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": "3d"})
-            ax1.scatter(ysample[5:,0], ysample[5:,1], ysample[5:,2], color="red", label="Samples.")
-            ax1.scatter(ysample[0:n_init_samples,0], ysample[0:n_init_samples,1], ysample[0:n_init_samples,2], color="blue", label="Initial samples.")
-            ax1.scatter(pf_approx[:,0], pf_approx[:,1], pf_approx[:,2], color="green", label="PF approximation.")
-            ax1.scatter(ysample[-1:-5:-1,0], ysample[-1:-5:-1,1], ysample[-1:-5:-1,2], color="black", label="Last 5 samples.")
-            ax2.scatter(pf_approx[:,0], pf_approx[:,1], pf_approx[:,2], color="green", label="PF approximation.")
-            ax1.set_xlabel(r"$f_1(x)$")
-            ax1.set_ylabel(r"$f_2(x)$")
-            ax1.set_zlabel(r"$f_3(x)$")
-            ax2.set_xlabel(r"$f_1(x)$")
-            ax2.set_ylabel(r"$f_2(x)$")
-            ax2.set_zlabel(r"$f_3(x)$")
-            ax1.legend()
-            plt.show()
 
         # Identify the inputs that correspond to the pareto front solutions.
         indicies = []
@@ -268,7 +241,11 @@ class MultiSurrogateOptimiser:
                 indicies.append(i)
         pf_inputs = Xsample[indicies]
 
-        return pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence
+        res = result.Res(pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, problem.n_obj, n_init_samples)
+
+        return res
+        # return pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence
+
 
 
 
@@ -354,7 +331,7 @@ class MonoSurrogateOptimiser:
         return (data - np.min(data)) / (np.max(data) - np.min(data))
 
     
-    def solve(self, n_iterations=100, display_pareto_front=False, n_init_samples=5, aggregation_func=None):
+    def solve(self, n_iterations=100, n_init_samples=5, aggregation_func=None):
         """
         This function contains the main flow of the multi-objective optimisation algorithm. This function attempts
         to solve the MOP.
@@ -439,30 +416,6 @@ class MonoSurrogateOptimiser:
             Xsample = np.vstack((Xsample, next_X))
         
         pf_approx = util_functions.calc_pf(ysample)
-        if display_pareto_front and problem.n_obj == 2:
-            plt.scatter(ysample[5:,0], ysample[5:,1], color="red", label="Samples.")
-            plt.scatter(ysample[0:n_init_samples,0], ysample[0:n_init_samples,1], color="blue", label="Initial samples.")
-            plt.scatter(pf_approx[:,0], pf_approx[:,1], color="green", label="PF approximation.")
-            plt.scatter(ysample[-1:-5:-1,0], ysample[-1:-5:-1,1], color="black", label="Last 5 samples.", zorder=10)
-            plt.xlabel(r"$f_1(x)$")
-            plt.ylabel(r"$f_2(x)$")
-            plt.legend()
-            plt.show()
-        elif display_pareto_front and problem.n_obj == 3:
-            fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": "3d"})
-            ax1.scatter(ysample[5:,0], ysample[5:,1], ysample[5:,2], color="red", label="Samples.")
-            ax1.scatter(ysample[0:n_init_samples,0], ysample[0:n_init_samples,1], ysample[0:n_init_samples,2], color="blue", label="Initial samples.")
-            ax1.scatter(pf_approx[:,0], pf_approx[:,1], pf_approx[:,2], color="green", label="PF approximation.")
-            ax1.scatter(ysample[-1:-5:-1,0], ysample[-1:-5:-1,1], ysample[-1:-5:-1,2], color="black", label="Last 5 samples.")
-            ax2.scatter(pf_approx[:,0], pf_approx[:,1], pf_approx[:,2], color="green", label="PF approximation.")
-            ax1.set_xlabel(r"$f_1(x)$")
-            ax1.set_ylabel(r"$f_2(x)$")
-            ax1.set_zlabel(r"$f_3(x)$")
-            ax2.set_xlabel(r"$f_1(x)$")
-            ax2.set_ylabel(r"$f_2(x)$")
-            ax2.set_zlabel(r"$f_3(x)$")
-            ax1.legend()
-            plt.show()
 
         # Find the inputs that correspond to the pareto front.
         indicies = []
@@ -471,6 +424,9 @@ class MonoSurrogateOptimiser:
                 indicies.append(i)
         pf_inputs = Xsample[indicies]
 
-        return pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence
+        res = result.Res(pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, problem.n_obj, n_init_samples)
+
+        return res
+        # return pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence
 
 
