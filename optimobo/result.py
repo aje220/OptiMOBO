@@ -24,10 +24,8 @@ class Res():
             plt.xlabel(r"$f_1(x)$")
             plt.ylabel(r"$f_2(x)$")
             plt.legend()
-            plt.show()
         
         elif self.n_obj == 3:
-
             fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": "3d"})
             ax1.scatter(self.ysample[5:,0], self.ysample[5:,1], self.ysample[5:,2], color="red", label="Samples.")
             ax1.scatter(self.ysample[0:self.n_init_samples,0], self.ysample[0:self.n_init_samples,1], self.ysample[0:self.n_init_samples,2], color="blue", label="Initial samples.")
@@ -41,11 +39,12 @@ class Res():
             ax2.set_ylabel(r"$f_2(x)$")
             ax2.set_zlabel(r"$f_3(x)$")
             ax1.legend()
-            plt.show()
+
 
     def hv_convergence(self):
         plt.plot(self.hypervolume_convergence)
-        plt.show()
-        return
     
+
+
+
     
