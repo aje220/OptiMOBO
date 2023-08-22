@@ -2,7 +2,9 @@ import matplotlib.pyplot as plt
 
 
 class Res():
-
+    """
+    Class created to hold all the data and functions associated with the result of optimisation.
+    """
 
     def __init__(self, pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, n_obj, n_init_samples):
         self.pf_approx = pf_approx
@@ -15,7 +17,10 @@ class Res():
 
 
     
-    def pareto_front(self):
+    def plot_pareto_front(self):
+        """
+        Using Matplotlib, this plots the pareto front for 2 and 3 objective problems.
+        """
         if self.n_obj == 2:
             plt.scatter(self.ysample[5:,0], self.ysample[5:,1], color="red", label="Samples.")
             plt.scatter(self.ysample[0:self.n_init_samples,0], self.ysample[0:self.n_init_samples,1], color="blue", label="Initial samples.")
@@ -41,7 +46,10 @@ class Res():
             ax1.legend()
 
 
-    def hv_convergence(self):
+    def plot_hv_convergence(self):
+        """
+        So you can see how the hypervolume changes from iteration to iteration.
+        """
         plt.plot(self.hypervolume_convergence)
     
 

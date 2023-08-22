@@ -32,7 +32,9 @@ class MyProblem(ElementwiseProblem):
 
 problem = MyProblem()
 optimi = opti.MultiSurrogateOptimiser(problem, [0,0], [700,12])
-out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[700,12]))
+out = optimi.solve(n_iterations=100, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[700,12]))
+out.plot_pareto_front()
+plt.show()
 ```
 
 Will return a Pareto set approximation:
@@ -44,7 +46,9 @@ For the multi-objective benchmark problem DTLZ5:
 from pymoo.problems import get_problem
 problem = get_problem("dtlz5", n_obj=2, n_var=5)
 optimi = opti.MultiSurrogateOptimiser(problem, [0,0], [1.3,1.3])
-out = optimi.solve(n_iterations=100, display_pareto_front=True, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[1.3,1.3])) 
+out = optimi.solve(n_iterations=100, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[1.3,1.3])) 
+out.plot_pareto_front()
+plt.show()
 ```
 
 Will return:
@@ -54,11 +58,12 @@ Will return:
 
 
 
-The output `results` is a tuple containing:
-* Solutions on the Pareto front approximation.
-* The corresponding inputs to the solutions on the Pareto front.
-* All evaluated solutions.
-* All inputs used in the search.
+The output `results` is a object containing:
+* ```results.pf_approx``` Solutions on the Pareto front approximation. 
+* ```results.pf_inputs``` The corresponding inputs to the solutions on the Pareto front.
+* ```results.pf_ysample``` All evaluated solutions.
+* ```results.pf_xsample``` All inputs used in the search. 
+* ```results.hypervolume_convergence``` How the hypervolume changes from iteration to iteration.
 
 When calling the ```optimiser.solve``` function for a ```MonoSurrogateOptimiser``` object, an aggregation function must be defined.
 
