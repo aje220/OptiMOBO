@@ -107,7 +107,8 @@ Various experimental parameters can be customised:
 * Number of samples used from the multi-variate distributions (multi-surrogate)
 
 #### Visualisation
-By setting ```display_pareto_front=True``` on the ```optimiser.solve``` method, the program will use matplotlib to display the objective space of the problem once the termination condition has been met.
+By calling ```result.plot_pareto_front()``` from a result object method, the program will use matplotlib to display the objective space of the problem at after the final iteration.
+The hypervolume convergence can be displayed also. Calling ```result.plot_hv_convergence() will show how the hypervolume changes iteration to iteration.
 
 
 
