@@ -183,6 +183,7 @@ class MultiSurrogateOptimiser:
         hypervolume_convergence = []
 
         for i in range(n_iterations):
+            print("niter"+str(i))
 
             # Get hypervolume metric.
             ref_point = self.max_point
@@ -206,22 +207,43 @@ class MultiSurrogateOptimiser:
             ref_dir = np.asarray(ref_dirs[np.random.randint(0,len(ref_dirs))])
 
             # Retrieve the next sample point.
-            X_next = None
-            X_next = None
-            min_scalar = None
-            pf = None
-            if acquisition_func is None:
-                pf = util_functions.calc_pf(ysample)
-                # import pdb; pdb.set_trace()
+            
+            
+            counter = 0
+            while True:
+                X_next = None
+                min_scalar = None
+                pf = None
+                # use the model, current best to get the next x value to evaluate.
+                if acquisition_func is None:
+                    pf = util_functions.calc_pf(ysample)
+                    # import pdb; pdb.set_trace()
 
-                if problem.n_obj == 2:
-                    X_next, _, = self._get_proposed_EHVI(util_functions.EHVI, models, self.ideal_point, self.max_point, pf, cached_samples)
+                    if problem.n_obj == 2:
+                        X_next, _, = self._get_proposed_EHVI(util_functions.EHVI, models, self.ideal_point, self.max_point, pf, cached_samples)
+                    else:
+                        X_next, _, = self._get_proposed_EHVI(util_functions.EHVI_3D, models, self.ideal_point, self.max_point, pf, cached_samples)
                 else:
-                    X_next, _, = self._get_proposed_EHVI(util_functions.EHVI_3D, models, self.ideal_point, self.max_point, pf, cached_samples)
-            else:
-                min_scalar =  np.min([acquisition_func(y, ref_dir) for y in ysample])
-                # print(min_scalar)
-                X_next, _, _ = self._get_proposed_scalarisation(util_functions.expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
+                    min_scalar =  np.min([acquisition_func(y, ref_dir) for y in ysample])
+                    # print(min_scalar)
+                    X_next, _, _ = self._get_proposed_scalarisation(util_functions.expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
+
+
+                # now check if next_X is feasible. Subject to constraints.
+                constr = problem.evaluate_constraints(X_next)
+                total = sum(n > 0 for n in constr)
+                if counter > 5:
+                    # print("break")
+                    break
+                elif total > 0:
+                    # print("repeat")
+                    # print(counter)
+                    counter = counter + 1
+                    continue
+                
+                else:
+                    break
+
 
 
             # Evaluate the next input.
@@ -385,6 +407,7 @@ class MonoSurrogateOptimiser:
         ref_dirs = get_reference_directions("das-dennis", problem.n_obj, n_partitions=100)
         hypervolume_convergence = []
         for i in range(n_iterations):
+            print("iter"+ str(i))
 
             # Hypervolume performance.
             ref_point = self.max_point
@@ -400,11 +423,27 @@ class MonoSurrogateOptimiser:
             model.Gaussian_noise.variance.fix(0)
             model.optimize(messages=False,max_f_eval=1000)
 
-            # use the model, current best to get the next x value to evaluate.
-            next_X, _ = self._get_proposed(self._expected_improvement, model, current_best)
+            counter = 0
+            next_X = None
+            while True:
+                # use the model, current best to get the next x value to evaluate.
+                next_X, _ = self._get_proposed(self._expected_improvement, model, current_best)
 
-            # now check if next_X is feasible.
 
+                # now check if next_X is feasible. Subject to constraints.
+                constr = problem.evaluate_constraints(next_X)
+                total = sum(n > 0 for n in constr)
+                if counter > 5:
+                    # print("break")
+                    break
+                elif total > 0:
+                    # print("repeat")
+                    # print(counter)
+                    counter = counter + 1
+                    continue
+                
+                else:
+                    break
 
 
 
