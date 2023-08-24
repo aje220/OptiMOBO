@@ -168,7 +168,29 @@ class MultiSurrogateOptimiser:
 
         # Initial samples.
         variable_ranges = list(zip(self.test_problem.xl, self.test_problem.xu))
-        Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples, variable_ranges)
+        Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples*20, variable_ranges)
+
+        
+        all_constr = np.asarray(list(map(problem.evaluate_constraints, Xsample)))
+        positive_mask = np.any(all_constr > 0, axis=1)
+
+        # Apply the mask to filter out arrays.
+        filtered = Xsample[~positive_mask]
+
+        # import pdb; pdb.set_trace()
+
+        Xsample = filtered[0:n_init_samples]
+        # Xsample = Xsample
+
+        # for count, value in enumerate(Xsample):
+        #     constr = problem.evaluate_constraints(value)
+        #     total = sum(n > 0 for n in constr)
+        #     if total > 0:
+        #         Xsample = np.delete(Xsample, count, 0)
+        #     else:
+        #         continue
+        
+        # import pdb; pdb.set_trace()
         
         # Evaluate inital samples.
         ysample = np.asarray([self._objective_function(problem, x) for x in Xsample])
@@ -177,7 +199,7 @@ class MultiSurrogateOptimiser:
         cached_samples = self._get_cached_samples(self.n_obj, sample_exponent)
 
         # Reference directions, one of these is radnomly selected every iteration, this promotes diverity.
-        ref_dirs = get_reference_directions("das-dennis", self.n_obj, n_partitions=100)
+        ref_dirs = get_reference_directions("das-dennis", self.n_obj, n_partitions=50)
 
 
         hypervolume_convergence = []
@@ -229,15 +251,17 @@ class MultiSurrogateOptimiser:
                     X_next, _, _ = self._get_proposed_scalarisation(util_functions.expected_decomposition, models, min_scalar, acquisition_func, ref_dir, cached_samples)
 
 
-                # now check if next_X is feasible. Subject to constraints.
+                # Now check if next_X is feasible. Subject to constraints.
                 constr = problem.evaluate_constraints(X_next)
                 total = sum(n > 0 for n in constr)
-                if counter > 5:
-                    # print("break")
+                # If unable to find a solution that satifies constraints.
+                if counter > 10:
+                    # Accept the solution, but penalise the objective values.
+                    # We do this to prevent infinite loops, getting stuck in a local optimum.
+                    # X_next = X_next + np.abs(X_next)*2
                     break
                 elif total > 0:
-                    # print("repeat")
-                    # print(counter)
+                # if total > 0:
                     counter = counter + 1
                     continue
                 
@@ -390,7 +414,18 @@ class MonoSurrogateOptimiser:
         # get the initial samples used to build first model
         # use latin hypercube sampling
         variable_ranges = list(zip(self.test_problem.xl, self.test_problem.xu))
-        Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples, variable_ranges)
+        Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples*20, variable_ranges)
+
+        
+        all_constr = np.asarray(list(map(problem.evaluate_constraints, Xsample)))
+        positive_mask = np.any(all_constr > 0, axis=1)
+
+        # Apply the mask to filter out arrays.
+        filtered = Xsample[~positive_mask]
+
+        # import pdb; pdb.set_trace()
+
+        Xsample = filtered[0:n_init_samples]
 
         # Evaluate inital samples.
         ysample = np.asarray([self._objective_function(problem, x) for x in Xsample])
