@@ -6,6 +6,7 @@ from scipy.stats import norm
 from scipy.optimize import differential_evolution
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.indicators.hv import HV
+import random
 # from pymoo.core.problem import ElementwiseProblem
 
 
@@ -35,8 +36,42 @@ class ParEGO():
                 mutant[i] += np.random.normal(0, mutation_strength)
         return mutant
 
+    
+    def simulated_binary_crossover(self, parent1, parent2, eta, crossover_probability):
+        if random.random() > crossover_probability:
+            return parent1
+    
+        offspring = np.empty_like(parent1)
+        
+        # for i in range(len(parent1)):
+        for i, value in enumerate(parent1):
+            if random.random() < 0.5:
+                beta = (2 * random.random()) ** (1.0 / (eta + 1))
+            else:
+                beta = (1.0 / (2 * (1 - random.random()))) ** (1.0 / (eta + 1))
+            
+            offspring[i] = 0.5 * ((1 + beta) * parent1[i] + (1 - beta) * parent2[i])
+            
+            # Ensure that offspring value is within specified bounds
+            # You should adjust these bounds according to your problem's constraints
+            offspring[i] = max(min(offspring[i], self.upper), self.lower)
+        
+        return offspring
+
     def generate_random_solution(self, vector_length):
         return np.random.uniform(low=self.lower, high=self.upper, size=vector_length)
+
+    
+    def binary_tournament_selection(self, population, num_selections, model, opt_value):
+        selected_indices = []
+    
+        for _ in range(num_selections):
+            candidate_indices = random.sample(range(len(population)), 2)
+            selected_index = candidate_indices[0] if self._expected_improvement(population[candidate_indices[0]], model, opt_value) > self._expected_improvement(population[candidate_indices[1]], model, opt_value) else candidate_indices[1]
+            selected_indices.append(selected_index)
+        
+        selected_individuals = [population[index] for index in selected_indices]
+        return selected_individuals
 
     def _objective_function(self, problem, x):
         """
@@ -78,7 +113,7 @@ class ParEGO():
 
         # 1/n_obj * 
         # initial weights are all the same
-        weights = np.asarray([1/problem.n_obj]*problem.n_obj)
+        # weights = np.asarray([1/problem.n_obj]*problem.n_obj)
 
         # get the initial samples used to build first model
         # use latin hypercube sampling
@@ -87,8 +122,7 @@ class ParEGO():
 
         # Evaluate inital samples.
         ysample = np.asarray([self._objective_function(problem, x) for x in Xsample])
-        aggregated_samples = np.asarray([aggregation_func(i, weights) for i in ysample]).flatten()
-        ys= np.reshape(aggregated_samples, (-1,1))
+        
 
 
         ref_dirs = get_reference_directions("das-dennis", problem.n_obj, n_partitions=100)
@@ -105,11 +139,12 @@ class ParEGO():
             
             # select a radnom weight vector
             ref_dir = ref_dirs[np.random.randint(0,len(ref_dirs))]
-
+            aggregated_samples = np.asarray([aggregation_func(i, ref_dir) for i in ysample]).flatten()
+            ys= np.reshape(aggregated_samples, (-1,1))
 
             # DACE procedure
             # compute aggregation function:
-            agg = aggregation_func(next_y, ref_dir)
+            # agg = aggregation_func(next_y, ref_dir)
             
             # build model using scalarisations, mono-surrogate
             model = GPy.models.GPRegression(Xsample, np.reshape(aggregated_samples, (-1,1)), GPy.kern.Matern52(self.n_vars,ARD=True))
@@ -119,6 +154,14 @@ class ParEGO():
             # now before we use EI we use evolutionary operators, EI is used in the evoalg
             # EVO_ALG(model, xpop[])
             # this gives us a newly proposed 
+            population_size = 10
+            solution_length = 5
+            mutation_rate = 0.1
+            mutation_strength = 0.2
+            crossover_probability = 0.8
+            eta = 2.0
+            num_selections = 2
+            num_offspring = population_size
 
             # initialise a temporary population of solution vectors.
             mutant_population = [self.mutate(solution_vector, mutation_rate, mutation_strength) for solution_vector in Xsample]
@@ -127,6 +170,9 @@ class ParEGO():
 
             temporary_population = mutant_population + random_population
 
+            current_best = aggregated_samples[np.argmin(aggregated_samples)]
+
+
             n_remutations = 10
             # best soluton
             best_solution_found = None
@@ -134,7 +180,6 @@ class ParEGO():
             for i in range(n_remutations):
 
 
-                current_best = aggregated_samples[np.argmin(aggregated_samples)]
                 # find EI of the all points in the population, get the best one
                 EIs = [self._expected_improvement(i, model, current_best ) for i in temporary_population]
                 best_EI_in_pop = np.max(EIs)
@@ -146,14 +191,31 @@ class ParEGO():
                 # 
                 # @TODO
                 # select, recombine, mutate to form new pop
-                # 
-            
+                # selected = self.binary_tournament_selection(temporary_population, 10)
 
 
 
 
+                
 
-                temporary_population = new_pop
+                new_population = []
+
+                # Selection and recombination loop
+                for _ in range(num_offspring):
+                    selected_parents = self.binary_tournament_selection(temporary_population, num_selections, model, current_best)
+                    
+                    if len(selected_parents) == 1:
+                        offspring = selected_parents[0].copy()
+                    else:
+                        parent1, parent2 = selected_parents
+                        offspring = self.simulated_binary_crossover(parent1, parent2, eta, crossover_probability)
+                    
+                    offspring = self.mutate(offspring, mutation_rate, mutation_strength)
+                    new_population.append(offspring)
+
+
+                temporary_population = new_population
+
 
             next_X = best_solution_found
             # Evaluate that point to get its objective values.
