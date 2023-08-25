@@ -113,7 +113,7 @@ class ParEGO():
         # get the initial samples used to build first model
         # use latin hypercube sampling
         variable_ranges = list(zip(self.test_problem.xl, self.test_problem.xu))
-        Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples*20, variable_ranges)
+        Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples, variable_ranges)
 
         # Evaluate inital samples.
         ysample = np.asarray([self._objective_function(problem, x) for x in Xsample])
@@ -190,7 +190,7 @@ class ParEGO():
 
 
 
-
+                # import pdb; pdb.set_trace()
                 
 
                 new_population = []
@@ -213,7 +213,7 @@ class ParEGO():
 
 
             next_X = best_solution_found
-            # Evaluate that point to get its objective values.
+            # Evaluate that point to get its objective valuess
             next_y = self._objective_function(problem, next_X)
 
             # add the new sample to archive.
