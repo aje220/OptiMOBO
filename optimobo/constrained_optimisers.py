@@ -469,11 +469,10 @@ class MonoSurrogateOptimiser:
                 constr = problem.evaluate_constraints(next_X)
                 total = sum(n > 0 for n in constr)
                 if counter > 5:
-                    # print("break")
+                    # TODO: pick the least violating solution found
                     break
                 elif total > 0:
-                    # print("repeat")
-                    # print(counter)
+
                     counter = counter + 1
                     continue
                 
