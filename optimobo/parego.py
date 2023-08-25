@@ -43,18 +43,13 @@ class ParEGO():
     
         offspring = np.empty_like(parent1)
         
-        # for i in range(len(parent1)):
-        for i, value in enumerate(parent1):
+        for i in range(len(parent1)):
             if random.random() < 0.5:
                 beta = (2 * random.random()) ** (1.0 / (eta + 1))
             else:
                 beta = (1.0 / (2 * (1 - random.random()))) ** (1.0 / (eta + 1))
             
             offspring[i] = 0.5 * ((1 + beta) * parent1[i] + (1 - beta) * parent2[i])
-            
-            # Ensure that offspring value is within specified bounds
-            # You should adjust these bounds according to your problem's constraints
-            offspring[i] = max(min(offspring[i], self.upper), self.lower)
         
         return offspring
 
