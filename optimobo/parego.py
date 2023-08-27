@@ -28,33 +28,105 @@ class ParEGO():
         self.upper = test_problem.xu
         self.lower = test_problem.xl
 
-    
-    def mutate(self, solution_vector, mutation_rate, mutation_strength):
+
+    def mutate(self, solution_vector, mutation_rate):
+
         mutant = solution_vector.copy()
-        for i in range(len(mutant)):
+
+        for i, value in enumerate(mutant):
             if np.random.rand() < mutation_rate:
-                mutant[i] += np.random.normal(0, mutation_strength)
+                # mu = np.random.uniform(0.0001, 1.000)
+                # delta = 1/(100+mu)
+                if np.random.uniform() > 0.5:
+                    mutant[i] = mutant[i]*1.05
+                else:
+                    mutant[i] = mutant[i]*0.95
+        
+        mutant = np.clip(mutant, self.lower, self.upper)
         return mutant
 
-    
-    def simulated_binary_crossover(self, parent1, parent2, eta, crossover_probability):
-        if random.random() > crossover_probability:
-            return parent1
-    
-        offspring = np.empty_like(parent1)
-        
-        for i in range(len(parent1)):
-            if random.random() < 0.5:
-                beta = (2 * random.random()) ** (1.0 / (eta + 1))
-            else:
-                beta = (1.0 / (2 * (1 - random.random()))) ** (1.0 / (eta + 1))
-            
-            offspring[i] = 0.5 * ((1 + beta) * parent1[i] + (1 - beta) * parent2[i])
-        
-        return offspring
 
-    def generate_random_solution(self, vector_length):
-        return np.random.uniform(low=self.lower, high=self.upper, size=vector_length)
+    # def binary_tournament_selection_without_replacment(self, population, num_selections, model, opt_value):
+
+    #     pop = population
+    #     all_parents = []
+    #     for i in range(num_selections):
+    #         # print(len(pop))
+    #         parents_pair = [0,0]
+    #         for i in range(2):
+    #             if len(pop) < 3:
+    #                 all_parents.append(pop)
+    #                 return all_parents
+    #             # import pdb; pdb.set_trace()
+    #             idx = random.sample(range(1, len(pop)), 2)
+    #             ind1 = idx[0]
+    #             ind2 = idx[1]
+    #             selected = None
+    #             ind1_fitness = self._expected_improvement(pop[ind1], model, opt_value)
+    #             ind2_fitness = self._expected_improvement(pop[ind2], model, opt_value)
+
+    #             if ind1_fitness > ind2_fitness:
+    #                 selected = ind1
+    #             else:
+    #                 selected = ind2
+
+    #             parent1 = pop[selected]
+    #             parents_pair[i] = parent1
+    #             pop = np.delete(pop, ind1, 0)
+    #             if len(pop) == 1 :
+    #                 return all_parents
+    #                 # import pdb; pdb.set_trace()
+    #         all_parents.append(parents_pair)
+    #     return all_parents
+
+    def simulated_binary_crossover(self, parent1, parent2, eta=1, crossover_prob=0.2):
+        
+        if np.random.rand() > crossover_prob:
+            return parent1.copy()
+        
+        u = np.random.rand(parent1.shape[0])
+        beta = np.where(u <= 0.5, (2 * u) ** (1.0 / (eta + 1)), (1.0 / (2 - 2 * u)) ** (1.0 / (eta + 1)))
+        
+        offspring1 = 0.5 * ((1 + beta) * parent1 + (1 - beta) * parent2)
+        offspring2 = 0.5 * ((1 - beta) * parent1 + (1 + beta) * parent2)
+
+        offspring1 = np.clip(offspring1, self.lower, self.upper)
+        offspring2 = np.clip(offspring2, self.lower, self.upper)
+
+        # import pdb; pdb.set_trace()
+
+        # ParEGO algorithm specifies that only one offspring is used after crossover.
+        return offspring1
+    
+    def parego_binary_tournament_selection_without_replacment(self, population, model, opt_value):
+    
+        pop = population
+        parents_pair = [0,0]
+
+        parent1_index = None
+
+        for i in range(2):
+            # import pdb; pdb.set_trace()
+            idx = random.sample(range(1, len(pop)), 2)
+            ind1 = idx[0]
+            ind2 = idx[1]
+            selected = None
+            ind1_fitness = self._expected_improvement(pop[ind1], model, opt_value)
+            ind2_fitness = self._expected_improvement(pop[ind2], model, opt_value)
+
+
+            if ind1_fitness > ind2_fitness:
+                selected = ind1
+            else:
+                selected = ind2
+            
+            if i == 0:
+                parent1_index = selected
+
+            # import pdb; pdb.set_trace()
+            parents_pair[i] = pop[selected]
+            pop = np.delete(pop, selected, 0)
+        return parents_pair, parent1_index
 
     
     def binary_tournament_selection(self, population, num_selections, model, opt_value):
@@ -66,6 +138,7 @@ class ParEGO():
             selected_indices.append(selected_index)
         
         selected_individuals = [population[index] for index in selected_indices]
+        import pdb; pdb.set_trace()
         return selected_individuals
 
     def _objective_function(self, problem, x):
@@ -118,7 +191,8 @@ class ParEGO():
         # Evaluate inital samples.
         ysample = np.asarray([self._objective_function(problem, x) for x in Xsample])
         
-
+        print(self.upper)
+        print(self.lower)
 
         ref_dirs = get_reference_directions("das-dennis", problem.n_obj, n_partitions=100)
         hypervolume_convergence = []
@@ -149,28 +223,28 @@ class ParEGO():
             # now before we use EI we use evolutionary operators, EI is used in the evoalg
             # EVO_ALG(model, xpop[])
             # this gives us a newly proposed 
-            population_size = 10
-            solution_length = 5
-            mutation_rate = 0.1
-            mutation_strength = 0.2
-            crossover_probability = 0.8
+            population_size = len(Xsample)            
+            mutation_rate = 1/self.n_vars
             eta = 2.0
-            num_selections = 2
-            num_offspring = population_size
+
 
             # initialise a temporary population of solution vectors.
-            mutant_population = [self.mutate(solution_vector, mutation_rate, mutation_strength) for solution_vector in Xsample]
-            num_random_solutions = 10
-            random_population = [self.generate_random_solution(len(Xsample[0])) for _ in range(num_random_solutions)]
+            idx = random.sample(range(0,len(Xsample)), 10)
+            # import pdb; pdb.set_trace()
+            mutant_population = [self.mutate(solution_vector, mutation_rate) for solution_vector in Xsample[idx]]
+            # num_random_solutions = population_size
+            # random_population = [self.generate_random_solution(len(Xsample[0])) for _ in range(num_random_solutions*2)]
+            random_population = util_functions.generate_latin_hypercube_samples(10, list(zip(self.test_problem.xl, self.test_problem.xu)))
 
-            temporary_population = mutant_population + random_population
+            temporary_population = np.vstack((mutant_population,  random_population))
 
+
+            # get the best currently found scalarised value. This is to calculate expected improvement.
             current_best = aggregated_samples[np.argmin(aggregated_samples)]
 
 
-            n_remutations = 10
-            # best soluton
-            best_solution_found = None
+            n_remutations = 1000
+            best_solution_found = self.lower
             best_EI = 0
             for i in range(n_remutations):
 
@@ -183,35 +257,32 @@ class ParEGO():
                     best_EI = best_EI_in_pop
                     best_solution_found = best_in_current_pop
 
-                # 
-                # @TODO
-                # select, recombine, mutate to form new pop
-                # selected = self.binary_tournament_selection(temporary_population, 10)
 
 
+                # Get parents for reombination, we need the index of parent1 to check if it needs to be replaced.
+                selected, parent1_idx = self.parego_binary_tournament_selection_without_replacment(temporary_population, model, current_best)
 
-                # import pdb; pdb.set_trace()
-                
-
-                new_population = []
-
-                # Selection and recombination loop
-                for _ in range(num_offspring):
-                    selected_parents = self.binary_tournament_selection(temporary_population, num_selections, model, current_best)
-                    
-                    if len(selected_parents) == 1:
-                        offspring = selected_parents[0].copy()
-                    else:
-                        parent1, parent2 = selected_parents
-                        offspring = self.simulated_binary_crossover(parent1, parent2, eta, crossover_probability)
-                    
-                    offspring = self.mutate(offspring, mutation_rate, mutation_strength)
-                    new_population.append(offspring)
+                parent1 = selected[0]
+                parent2 = selected[1]
 
 
-                temporary_population = new_population
+                offspring = self.simulated_binary_crossover(parent1, parent2, eta, crossover_prob=0.2)
+
+                # now apply mutation
+                mutated_offspring = self.mutate(offspring, mutation_rate)
+
+                # to check if mutant is better than parent1
+                fitness_parent1 = self._expected_improvement(parent1, model, current_best)
+                fitness_offspring = self._expected_improvement(mutated_offspring, model, current_best)
+
+                # check if the new one is better than the parent
+                final = parent1 if fitness_parent1 > fitness_offspring else mutated_offspring
 
 
+                temporary_population[parent1_idx] = final
+
+
+            print("NEXT_X FOUND")
             next_X = best_solution_found
             # Evaluate that point to get its objective valuess
             next_y = self._objective_function(problem, next_X)
