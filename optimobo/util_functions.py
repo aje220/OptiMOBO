@@ -319,4 +319,38 @@ def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache
     return total
 
 
+def binary_tournament_selection_without_replacment(self, population, num_selections, model, opt_value):
+    """
+    Returns a nested array of pairs of selected parents.
+    """
+    pop = population
+    all_parents = []
+    for i in range(num_selections):
+        # print(len(pop))
+        parents_pair = [0,0]
+        for i in range(2):
+            if len(pop) < 3:
+                all_parents.append(pop)
+                return all_parents
+            # import pdb; pdb.set_trace()
+            idx = random.sample(range(1, len(pop)), 2)
+            ind1 = idx[0]
+            ind2 = idx[1]
+            selected = None
+            ind1_fitness = self._expected_improvement(pop[ind1], model, opt_value)
+            ind2_fitness = self._expected_improvement(pop[ind2], model, opt_value)
+
+            if ind1_fitness > ind2_fitness:
+                selected = ind1
+            else:
+                selected = ind2
+
+            parent1 = pop[selected]
+            parents_pair[i] = parent1
+            pop = np.delete(pop, ind1, 0)
+            if len(pop) == 1 :
+                return all_parents
+                # import pdb; pdb.set_trace()
+        all_parents.append(parents_pair)
+    return all_parents
 
