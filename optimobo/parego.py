@@ -179,12 +179,9 @@ class ParEGO():
 
         problem = self.test_problem
 
-        # 1/n_obj * 
-        # initial weights are all the same
-        # weights = np.asarray([1/problem.n_obj]*problem.n_obj)
 
-        # get the initial samples used to build first model
-        # use latin hypercube sampling
+        # Initial Latin Hypercube samples.
+        # The initialisation of samples used here isnt quite the same as the paper, but im sure its fine.
         variable_ranges = list(zip(self.test_problem.xl, self.test_problem.xu))
         Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples, variable_ranges)
 
@@ -206,14 +203,11 @@ class ParEGO():
             hypervolume_convergence.append(hv)
             
             
-            # select a radnom weight vector
+            # select a radnom weight vector, randomness promotes diversity.
             ref_dir = ref_dirs[np.random.randint(0,len(ref_dirs))]
             aggregated_samples = np.asarray([aggregation_func(i, ref_dir) for i in ysample]).flatten()
             ys= np.reshape(aggregated_samples, (-1,1))
 
-            # DACE procedure
-            # compute aggregation function:
-            # agg = aggregation_func(next_y, ref_dir)
             
             # build model using scalarisations, mono-surrogate
             model = GPy.models.GPRegression(Xsample, np.reshape(aggregated_samples, (-1,1)), GPy.kern.Matern52(self.n_vars,ARD=True))
@@ -230,26 +224,26 @@ class ParEGO():
 
             # initialise a temporary population of solution vectors.
             idx = random.sample(range(0,len(Xsample)), 10)
-            # import pdb; pdb.set_trace()
+            # This temporary pop is partly made from mutants of the current population.
             mutant_population = [self.mutate(solution_vector, mutation_rate) for solution_vector in Xsample[idx]]
-            # num_random_solutions = population_size
-            # random_population = [self.generate_random_solution(len(Xsample[0])) for _ in range(num_random_solutions*2)]
+            # and also random solutions.
             random_population = util_functions.generate_latin_hypercube_samples(10, list(zip(self.test_problem.xl, self.test_problem.xu)))
 
             temporary_population = np.vstack((mutant_population,  random_population))
 
 
-            # get the best currently found scalarised value. This is to calculate expected improvement.
+            # Get the best currently found scalarised value. This is to calculate expected improvement.
             current_best = aggregated_samples[np.argmin(aggregated_samples)]
 
 
-            n_remutations = 1000
+            n_remutations = 1000 # because the chance of something changing is low, lots of iterations are needed.
             best_solution_found = self.lower
             best_EI = 0
             for i in range(n_remutations):
 
 
-                # find EI of the all points in the population, get the best one
+                # Find EI of the all points in the population, get the best one. Were gonna be trying to improve the best
+                # via evolutionary operators.
                 EIs = [self._expected_improvement(i, model, current_best ) for i in temporary_population]
                 best_EI_in_pop = np.max(EIs)
                 best_in_current_pop = temporary_population[np.argmax(EIs)]
@@ -265,32 +259,27 @@ class ParEGO():
                 parent1 = selected[0]
                 parent2 = selected[1]
 
-
+                # Mating
                 offspring = self.simulated_binary_crossover(parent1, parent2, eta, crossover_prob=0.2)
 
-                # now apply mutation
+                # Now apply mutation
                 mutated_offspring = self.mutate(offspring, mutation_rate)
 
-                # to check if mutant is better than parent1
+                # We need to check is the child outperforms parent1.
                 fitness_parent1 = self._expected_improvement(parent1, model, current_best)
                 fitness_offspring = self._expected_improvement(mutated_offspring, model, current_best)
 
-                # check if the new one is better than the parent
+                # Check if the new one is better than the parent, if so replace it in the temporary population.
                 final = parent1 if fitness_parent1 > fitness_offspring else mutated_offspring
-
-
                 temporary_population[parent1_idx] = final
 
 
-            print("NEXT_X FOUND")
             next_X = best_solution_found
             # Evaluate that point to get its objective valuess
             next_y = self._objective_function(problem, next_X)
 
             # add the new sample to archive.
             ysample = np.vstack((ysample, next_y))
-
-            ref_dir = ref_dirs[np.random.randint(0,len(ref_dirs))]
 
             # Aggregate new sample
             agg = aggregation_func(next_y, ref_dir)
@@ -311,10 +300,4 @@ class ParEGO():
         res = result.Res(pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, problem.n_obj, n_init_samples)
 
         return res
-
-
-
-
-
         
-
