@@ -5,38 +5,46 @@ from pygmo import fast_non_dominated_sorting, hypervolume
 import GPy
 
 
-# def expected(X, models, agg_func, cache, weights):
-#     """
-#     I cant remember why i wrote this function, i should probably delete it.
+def expected(X, models, agg_func, cache, weights):
+    """
+    I cant remember why i wrote this function, i should probably delete it.
+    I remember now.
+    This function was written to plot the landscapes of multi-surrogate problems.
+   
+    It scalarises the predicted values at from the input x.
  
-#     """
+    """
 
-#     predicitions = []
-#     for i in models:
-#         # import pdb; pdb.set_trace()
-#         output = i.predict(np.asarray([X]))
-#         predicitions.append(output)
 
-#     dimensions = len(models)
+    predicitions = []
+    for i in models:
+        # import pdb; pdb.set_trace()
+        output = i.predict(np.asarray([X]))
+        predicitions.append(output)
 
-#     # Translate the samples to the correct position
-#     sample_values = change(predicitions, cache, dimensions)
+    dimensions = len(models)
 
-#     n_samples = len(sample_values)
+    # Translate the samples to the correct position
+    sample_values = change(predicitions, cache, dimensions)
+    # the predictions are used to translate the samples.
 
-#     # PBI values of all the points sampled from the distribution.
-#     aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
+    n_samples = len(sample_values)
 
-#     total = np.mean(aggregated_samples)
-#     std = np.std(aggregated_samples)
 
-#     # Calculate twice the standard deviation
-#     twice_std = 2 * std
+    # agg values of all the points sampled from the distribution.
+    aggregated_samples = np.asarray([agg_func(x, weights) for x in sample_values])
 
-#     upper_bound = total + twice_std
-#     lower_bound = total - twice_std
+    total = np.mean(aggregated_samples)
+    std = np.std(aggregated_samples)
 
-#     return total, upper_bound, lower_bound
+
+    # Calculate twice the standard deviation
+    twice_std = 2 * std
+
+    upper_bound = total + twice_std
+    lower_bound = total - twice_std
+
+    return total, upper_bound, lower_bound
 
 
 def generate_latin_hypercube_samples(num_samples: int, variable_ranges: list[float]):
@@ -65,6 +73,10 @@ def calc_pf(Y: list[float]):
 
     returns: Pareto front, in the same form as y, numpy array in the shape: (n_points x n_dimensions)
     """
+
+    if len(Y) < 2:
+        return Y
+
     ndf, _, _, _ = fast_non_dominated_sorting(Y)
     return np.asarray([list(Y[i]) for i in ndf[0]])
 
@@ -354,3 +366,39 @@ def binary_tournament_selection_without_replacment(self, population, num_selecti
         all_parents.append(parents_pair)
     return all_parents
 
+def wfg(pl, ref_point):
+    """
+    L. While et al. 
+    10.1109/TEVC.2010.2077298
+    Algorithm for calculating the hypervolume of a set of points. Assumes minimisation.
+    
+    Params:
+        pl: set of points.
+        ref_point: the coordinate from which to measure hypervolume, the reference point.
+    
+    """
+    return sum([exclhv(pl, k, ref_point) for k in range(len(pl))])
+
+def exclhv(pl, k, ref_point):
+    inclusive = inclhv(pl[k], ref_point)
+    limit_set = limitset(pl, k)
+    ls_hv = wfg(calc_pf(limit_set), ref_point)
+    excl = inclusive - ls_hv
+    return excl
+    
+def limitset(pl, k):
+    result = []
+    for j in range(len(pl)-k-1):
+        aux = []
+        for (p, q) in zip(pl[k], pl[j+k+1]):
+            res = max(p,q)
+            aux.append(res)
+        result.append(aux)
+    # result = [[max(p,q) for (p,q) in zip(pl[k], pl[j+k+1])] for j in range(len(pl)-k-1)]
+    return result
+
+def inclhv(p, ref_point):
+    # this works
+    # refPoint = [8, 9]
+    # print("p "+str(p))
+    return np.product([np.abs(p[j] - ref_point[j]) for j in range(2)])

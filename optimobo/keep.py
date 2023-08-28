@@ -139,6 +139,9 @@ class KEEP():
         return ei.flatten() 
 
 
+    
+
+
     def pareto_expected_improvement(self, X, pareto_model, scalarised_model, opt_value):
         """
         Performance function specific to KEEP. This takes into acount the Expected Improvement
