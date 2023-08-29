@@ -402,3 +402,84 @@ def inclhv(p, ref_point):
     # refPoint = [8, 9]
     # print("p "+str(p))
     return np.product([np.abs(p[j] - ref_point[j]) for j in range(2)])
+
+
+
+
+def decompose_into_cells_3d(self, data_points, ref_point):
+        def wfg(pl, ref_point):
+            """
+            L. While et al. 
+            10.1109/TEVC.2010.2077298
+            Algorithm for calculating the hypervolume of a set of points. Assumes minimisation.
+            
+            Params:
+                pl: set of points.
+                ref_point: the coordinate from which to measure hypervolume, the reference point.
+            
+            """
+
+            # return sum([exclhv(pl, k, ref_point) for k in range(len(pl))])
+            return [exclhv(pl, k, ref_point) for k in range(len(pl))]
+
+
+        def exclhv(pl, k, ref_point):
+
+            limit_set = limitset(pl, k)
+            ls_hv = wfg(util_functions.calc_pf(limit_set), ref_point)
+            return limit_set
+            
+        def limitset(pl, k):
+            result = []
+            for j in range(len(pl)-k-1):
+                aux = []
+                for (p, q) in zip(pl[k], pl[j+k+1]):
+                    res = min(p,q)
+                    aux.append(res)
+                result.append(aux)
+            # result = [[max(p,q) for (p,q) in zip(pl[k], pl[j+k+1])] for j in range(len(pl)-k-1)]
+            return result
+
+        def inclhv(p, ref_point):
+
+            return np.product([np.abs(p[j] - ref_point[j]) for j in range(self.n_obj)])
+
+        # Sorting the coords makes understanding whats going on easier
+        sorted_coordinates = sorted(data_points, key=lambda coord: coord[0])
+
+        # Get the limitsets of the pareto set of the points
+        ss = np.asarray(wfg(util_functions.calc_pf(sorted_coordinates), ref_point))
+        # import pdb; pdb.set_trace()
+
+        # The final limitset needs to be fixed to include the correct point, this is due to a limitation of the modified
+        # wfg algorithm
+        # ss[-1] = [[ref_point[0], util_functions.calc_pf(sorted_coordinates)[-1][0]]]
+        ss[-1] = [[ref_point[0], util_functions.calc_pf(sorted_coordinates)[-1][0], util_functions.calc_pf(sorted_coordinates)[-1][1]]]
+        # import pdb; pdb.set_trace()
+
+
+        # We get the upper bounds of each cell
+        upperlower = [[sorted_coordinates[i], ss[i][0]] for i, _ in enumerate(ss)]
+
+        # Now in this loop we include the other coordinates for each cell
+        new = upperlower
+        # bbbb = []
+        asdff = []
+        for i in upperlower:
+            asdf = []
+            for j in i:
+                asdf.append([1,j[1],j[2]])
+                # asdf.append([1,j[2]]) 
+
+                # print([1,j[1]])
+                # bbbb.append([1,j[1]])
+                # print(j)
+            asdff.append(asdf)
+
+        # import pdb; pdb.set_trace()
+
+        # stack the coordinates together
+        final = np.hstack((upperlower, asdff))
+        # We need to fix the final cell again.
+        final[-1][-1] = ref_point
+        return final

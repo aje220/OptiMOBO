@@ -11,3 +11,4 @@ optimisers_comp.py
 util_comp.py
 missileformulation.py
 modified_test_problems.py
+constrained_optimisers.py
