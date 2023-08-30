@@ -11,8 +11,9 @@ class Scalarisation:
     It makes implementing the scalaristion functions easier too. When writing them I need to implement an __init__
     that only concerns the parameters used in that particular function.
     """
-    def __init__(self):
-        return
+    def __init__(self, ideal_point, max_point):
+        self.ideal_point = ideal_point
+        self.max_point = max_point
 
     def __call__(self, *args, **kwargs):
         return self.do(*args, **kwargs)
@@ -25,13 +26,17 @@ class Scalarisation:
         """
         D = self._do(F, weights, **args).flatten()
         return D
+    
+    def set_bounds(self, new_lower, new_upper):
+        self.ideal_point = new_lower
+        self.max_point = new_upper
+
 
 class WeightedSum(Scalarisation):
     
     def __init__(self, ideal_point, max_point):
-        super().__init__()
-        self.ideal_point = ideal_point
-        self.max_point = max_point
+        super().__init__(ideal_point, max_point)
+
 
     def _do(self, F, weights):
         
@@ -67,9 +72,8 @@ class Tchebicheff(Scalarisation):
 
     """
     def __init__(self, ideal_point, max_point):
-        super().__init__()
-        self.ideal_point = ideal_point
-        self.max_point = max_point
+        super().__init__(ideal_point, max_point)
+
 
     # def _do(self, F, weights):
     #     if np.ndim(F) == 2:
@@ -104,10 +108,8 @@ class AugmentedTchebicheff(Scalarisation):
     """
     
     def __init__(self, ideal_point, max_point, alpha=0.0001) -> None:
-        super().__init__()
+        super().__init__(ideal_point, max_point)
         self.alpha = alpha
-        self.ideal_point = ideal_point
-        self.max_point = max_point
 
     def _do(self, F, weights):
 
@@ -139,10 +141,9 @@ class ModifiedTchebicheff(Scalarisation):
     """
     
     def __init__(self, ideal_point, max_point, alpha=0.0001):
-        super().__init__()
+        super().__init__(ideal_point, max_point)
+
         self.alpha = alpha
-        self.ideal_point = ideal_point
-        self.max_point = max_point
 
     def _do(self, F, weights):
 
@@ -181,9 +182,8 @@ class ExponentialWeightedCriterion(Scalarisation):
     """
 
     def __init__(self, ideal_point, max_point, p=100, **kwargs):
-        super().__init__(**kwargs)
-        self.ideal_point = ideal_point
-        self.max_point = max_point
+        super().__init__(ideal_point, max_point)
+        
         self.p = p
 
     # def _do(self, F, weights):
@@ -219,9 +219,8 @@ class WeightedNorm(Scalarisation):
     """
 
     def __init__(self, ideal_point, max_point, p=3) -> None:
-        super().__init__()
-        self.ideal_point = ideal_point
-        self.max_point = max_point
+        super().__init__(ideal_point, max_point)
+
         self.p = p
 
     def _do(self, F, weights):
@@ -248,9 +247,8 @@ class WeightedPower(Scalarisation):
     """
 
     def __init__(self, ideal_point, max_point, p=3):
-        super().__init__()
-        self.ideal_point = ideal_point
-        self.max_point = max_point
+        super().__init__(ideal_point, max_point)
+
         self.p = p
 
     def _do(self, F, weights):
@@ -273,9 +271,9 @@ class WeightedProduct(Scalarisation):
     """
 
     def __init__(self, ideal_point, max_point):
-        super().__init__()
-        self.ideal_point = ideal_point
-        self.max_point = max_point
+        super().__init__(ideal_point, max_point)
+
+
     
 
     def _do(self, F, weights):
@@ -305,10 +303,8 @@ class PBI(Scalarisation):
     """
 
     def __init__(self, ideal_point, max_point, theta=5):
-        super().__init__()
+        super().__init__(ideal_point, max_point)
         self.theta = theta
-        self.ideal_point = ideal_point
-        self.max_point = max_point
 
     
     def _do(self, f, weights):
@@ -366,10 +362,8 @@ class IPBI(Scalarisation):
     """
 
     def __init__(self, ideal_point, max_point, theta=5) -> None:
-        super().__init__()
+        super().__init__(ideal_point, max_point)
         self.theta = theta
-        self.ideal_point = ideal_point
-        self.max_point = max_point
 
     
     def _do(self, f, weights):
@@ -399,10 +393,10 @@ class QPBI(Scalarisation):
     # more testing required.
 
     def __init__(self, ideal_point, max_point, theta=5, alpha=5.0, H=5.0) -> None:
-        super().__init__()
+        super().__init__(ideal_point, max_point)
+
+
         self.theta = theta
-        self.ideal_point = ideal_point
-        self.max_point = max_point
         self.alpha = alpha
         self.H = H
 
@@ -476,9 +470,7 @@ class APD(Scalarisation):
     #     self.gamma = gamma
     
     def __init__(self, ideal_point, max_point, FE=1, FE_max=10, gamma=0.010304664101210016):
-        super().__init__()
-        self.ideal_point = ideal_point
-        self.max_point = max_point
+        super().__init__(ideal_point, max_point)
         self.FE = FE
         self.FE_max = FE_max
         self.gamma = gamma
