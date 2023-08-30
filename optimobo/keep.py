@@ -1,9 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.gaussian_process import GaussianProcessRegressor
-from scipy.stats import qmc
 from scipy.stats import norm
-from scipy.optimize import differential_evolution
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.indicators.hv import HV
 import random

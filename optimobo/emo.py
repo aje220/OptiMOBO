@@ -1,39 +1,13 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import util_functions
-from scipy import stats
-
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.gaussian_process import GaussianProcessRegressor
-from scipy.stats import qmc
-from scipy.stats import norm
 from scipy.optimize import differential_evolution
-from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.indicators.hv import HV
-# from pymoo.core.problem import ElementwiseProblem
-
-
 # from util_functions import EHVI, calc_pf, expected_decomposition
 # from . import util_functions
 import util_functions
 import result
 import GPy
-import numpy as np
-# from constrained_optimisers import MultiSurrogateOptimiser, MonoSurrogateOptimiser
-# from parego import ParEGO
-# from keep import KEEP
-# from pymoo.core.problem import ElementwiseProblem
-from pymoo.util.ref_dirs import get_reference_directions
-from scalarisations import Tchebicheff, PBI, ModifiedTchebicheff, WeightedSum, IPBI, ExponentialWeightedCriterion, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, APD, QPBI
-from util_functions import ei_over_decomposition
-import matplotlib.pyplot as plt
-from pymoo.problems import get_problem
-from pymoo.util.plotting import plot
-from problem import Problem, ElementwiseProblem
-import pymoo.gradient.toolbox as anp
-from modified_test_problems import WeldedBeam, MODActMine
-import cProfile 
+
+
 
 
 class EMO:
@@ -279,7 +253,7 @@ class EMO:
         res = result.Res(pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, problem.n_obj, n_init_samples)
 
         return res
-        
+
 
     
 
