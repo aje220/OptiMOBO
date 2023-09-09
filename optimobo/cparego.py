@@ -22,9 +22,8 @@ import result
 
 class cParEGO():
     """
-    Proposed by J Knowles in 2006. Its a mono-surrogate algorithm that uses evolutionary operators to select the next sample point
-    at each iteration. DOI:10.1109/TEVC.2005.851274
-    
+    J A. Duro et al. 2022. https://doi.org/10.1016/j.ejor.2022.08.032
+    This algorithm is ParEGO-C1    
     """
 
     def __init__(self, test_problem, ideal_point, max_point):
@@ -109,11 +108,16 @@ class cParEGO():
 
     def select_subset(self, X_feasible, X_infeasible, ref_dir, N_max):
         """
-        returns subset X_prime of size N_max
+        returns subset X_prime of size N_max. We do this to minimise the cost of reconstructing the
+        Gaussian process at each iteration.
         """
 
         def xi(x):
-            constr = self._constraint_function(self.test_problem, x)
+            """
+            Get the infeasibility score of a potential solution
+            TODO: change the constrain function call the information we have calculated already.
+            """
+            constr = self._constraint_function(self.test_problem, x) # really, we shouldnt call this, need to change this.
             xi = sum([max(i, 0) for i in constr])
             return xi
 
@@ -152,8 +156,6 @@ class cParEGO():
 
 
         H = N_max//2
-
-        # import pdb; pdb.set_trace()
 
         if len(X_feasible) + len(X_infeasible) < N_max: # all solutions are selected
             return np.vstack((X_feasible, X_infeasible))
@@ -209,12 +211,6 @@ class cParEGO():
 
 
 
-
-
-            
-            
-
-
     def solve(self, n_iterations=100, n_init_samples=5, aggregation_func=None, N_max=100):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
@@ -249,13 +245,12 @@ class cParEGO():
             hv = HV_ind(ysample)
             hypervolume_convergence.append(hv)
 
-            # shuffle ref_dirs
+            # shuffle ref_dirs, for diversity's sake
             np.random.shuffle(ref_dirs)
 
 
-
             for ref_dir in ref_dirs:
-                print(ref_dir)
+                print("Iteration with reference direction: "+str(ref_dir))
 
                 # update the lower and upper bounds
                 # these are used as the ideal and max points
@@ -265,8 +260,8 @@ class cParEGO():
                     upper[i] = max(ysample[:,i])
                     lower[i] = min(ysample[:,i])
 
-                upper = self.max_point
-                lower = self.ideal_point
+                # upper = self.max_point
+                # lower = self.ideal_point
                 # import pdb; pdb.set_trace()
 
                 # change the bounds of the scalarisation object
@@ -295,27 +290,21 @@ class cParEGO():
                 y_infeasible = ysample[feasible_mask]
                 # import pdb; pdb.set_trace()
 
-
+                # stack information toegther so they can be found together
                 feasible_pairs = np.hstack((X_feasible, y_feasible, np.reshape(S_feasible, (-1,1))))
                 infeasible_pairs = np.hstack((X_infeasible, y_infeasible, np.reshape(S_infeasible, (-1,1))))
-                # import pdb; pdb.set_trace()
-                # infease = [ True if np.any(x) == True for x in infease else False]
-                # X_feasible = 
-                ###################################################################################################
+               
                 # Penalise the infeasible solutions, if they exist.
-                # what a nightmare this was
                 if len(infeasible_pairs) > 0:
 
                     v_max = [max(idx) for idx in zip(*gsample)]
-                    
+
+                    # these next four functions are written as they are shown in the paper
                     def xi_single(J, v_max):
                         """
                         J is a consraint vector, one entry from gsample
                         """
-                        # import pdb; pdb.set_trace()
                         calc = sum([max(value, 0)/v_max[count] for count, value in enumerate(J)])
-                        
-                        
                         return calc/len(J)
 
                     def s_dot(x, x_star):
@@ -326,18 +315,16 @@ class cParEGO():
                         s_fitness = x[-1]
                         s_star_fitness = x_star[-1]
 
-                        # import pdb; pdb.set_trace()
-
                         if s_fitness < s_star_fitness:
                             return s_star_fitness
                         else:
                             return s_fitness
                     
                     def s_bar(x, upper, lower, ref_dir):
-                        # import pdb; pdb.set_trace()
                         return (x[-1] - min(aggregated_samples))/(max(aggregated_samples)-min(aggregated_samples))
 
                     def xi_bar(x, infeasibility_scores):
+                        # it fails if there is only one infeasible solution, therefore this if else statement to fix it.
                         if len(infeasibility_scores) == 1:
                             return (xi_single(x, v_max) - min(aggregated_samples))/(max(aggregated_samples)-min(aggregated_samples))
                         else:
@@ -362,7 +349,6 @@ class cParEGO():
                     
                     # get x_star, 
                     x_star = None
-                    # import pdb; pdb.set_trace()
 
                     if np.any(X_feasible): # if there is a feasible solution
                         x_star = feasible_pairs[np.argmin(feasible_pairs[:,-1])]
@@ -376,32 +362,22 @@ class cParEGO():
 
                     aggregated_samples[feasible_mask] = penalised.flatten()
                     
-                    #####################################################################################
                 # penalisation is over
                 # now select a subset of solutions from X with maximum size N_max, which is a subset of all the solutions
                 # you are picking a smaller set of the best solutions to reconstruct the model, this should improve performance
-                # import pdb; pdb.set_trace()
-                # N_max = 100
-                # so split the aggregated samples
 
+                # Stack everything together so when we are selecting a subset the input output pairs are kept together.
                 S_feasible = aggregated_samples[~feasible_mask]
                 S_infeasible = aggregated_samples[feasible_mask]
                 y_feasible = ysample[~feasible_mask]
                 y_infeasible = ysample[feasible_mask]
-                # import pdb; pdb.set_trace()
-
 
                 feasible_pairs = np.hstack((X_feasible, y_feasible, np.reshape(S_feasible, (-1,1))))
                 infeasible_pairs = np.hstack((X_infeasible, y_infeasible, np.reshape(S_infeasible, (-1,1))))
 
-                # feasible_pairs = np.asarray(list(zip(X_feasible, S_feasible)))
-                # infeasible_pairs = np.asarray(list(zip(X_infeasible, S_infeasible)))
-                # import pdb; pdb.set_trace()
+            
                 X_prime = self.select_subset(feasible_pairs, infeasible_pairs, ref_dir, N_max)
-                # import pdb; pdb.set_trace()
-                # now make a surrogate model from X_prime and aggregated_samples
-                # so we need a way of keeping track of the aggregated samples and the corresponding X values
-                # X_prime, S_prime = zip(*X_prime)
+            
                 
                 
                 model_input = X_prime[:,:self.n_vars]
@@ -415,21 +391,17 @@ class cParEGO():
                 
 
                 
-                # import pdb; pdb.set_trace()
+
                 next_X, _ = self._get_proposed(self._expected_improvement, model, current_best)
 
-
-                # Evaluate that point to get its objective valuess
-                # import pdb; pdb.set_trace()
-
                 next_y = self._objective_function(problem, next_X)
-                print(next_X)
-                print(next_y)
-                print(X_prime[0])
+                # print(next_X)
+                # print(next_y)
+                # print(X_prime[0])
 
                 # add the new sample to archive.
                 ysample = np.vstack((ysample, next_y))
-                print(len(ysample))
+                # print(len(ysample))
 
                 # Aggregate new sample
                 agg = aggregation_func(next_y, ref_dir)
@@ -444,7 +416,7 @@ class cParEGO():
 
                 # import pdb; pdb.set_trace()
 
-                ####################################################
+                # ###################################################
                 # X = np.asarray(np.arange(0, 8, 0.01))
                 # X = np.asarray([[x] for x in X])
                 # # Get the aggregation function outputs and objective values for plotting.
@@ -523,9 +495,9 @@ class cParEGO():
                 # plt.show()
 
                 
-        
-        pf_approx = util_functions.calc_pf(ysample)
-
+        # the pf_approx is the pf of the feasible solutions
+        pf_approx = util_functions.calc_pf(feasible_pairs[:,self.n_vars:-1])
+        # import pdb; pdb.set_trace()
         # Find the inputs that correspond to the pareto front.
         indicies = []
         for i, item in enumerate(ysample):
