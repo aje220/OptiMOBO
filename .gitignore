@@ -12,3 +12,4 @@ util_comp.py
 missileformulation.py
 modified_test_problems.py
 constrained_optimisers.py
+Bayesian_optimisation_util.py

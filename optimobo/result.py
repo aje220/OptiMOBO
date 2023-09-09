@@ -23,8 +23,8 @@ class Res():
         """
         if self.n_obj == 2:
             plt.scatter(self.ysample[5:,0], self.ysample[5:,1], color="red", label="Samples.")
-            plt.scatter(self.ysample[0:self.n_init_samples,0], self.ysample[0:self.n_init_samples,1], color="blue", label="Initial samples.")
             plt.scatter(self.pf_approx[:,0], self.pf_approx[:,1], color="green", label="PF approximation.")
+            plt.scatter(self.ysample[0:self.n_init_samples,0], self.ysample[0:self.n_init_samples,1], color="blue", label="Initial samples.")
             plt.scatter(self.ysample[-1:-5:-1,0], self.ysample[-1:-5:-1,1], color="black", label="Last 5 samples.")
             plt.xlabel(r"$f_1(x)$")
             plt.ylabel(r"$f_2(x)$")
