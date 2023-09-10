@@ -28,6 +28,9 @@ class Scalarisation:
         return D
     
     def set_bounds(self, new_lower, new_upper):
+        """
+        For when you need to change the max and ideal points after the object has been initialised.
+        """
         self.ideal_point = new_lower
         self.max_point = new_upper
 
