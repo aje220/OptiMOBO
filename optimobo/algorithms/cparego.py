@@ -151,8 +151,6 @@ class ParEGO_C1():
         scores = [xi(x[:-1-self.n_obj]) for x in X_infeasible]
         X_infease_score = np.hstack((X_infeasible, np.reshape(scores, (-1,1))))
         X_infease_scores_sorted = X_infease_score[X_infease_score[:,-1].argsort()]
-        # scores.sort()
-        # import pdb; pdb.set_trace()
 
 
         H = N_max//2
@@ -166,7 +164,6 @@ class ParEGO_C1():
         elif len(X_feasible) == 0:
             X_prime = X_infease_scores_sorted[0:H]
             X_prime = X_prime[:,:-1]
-            # difference = np.setdiff1d(X_prime, X_infeasible)
             
             rows1 = [tuple(row) for row in X_prime]
 
@@ -176,7 +173,6 @@ class ParEGO_C1():
             difference = list(set(rows2) - set(rows1))
             difference = np.array(difference)
 
-            # import pdb; pdb.set_trace()
             best_leftover = best_performing(difference, N_max-len(X_prime), ref_dir)
             X_prime = np.vstack((X_prime ,best_leftover ))
             return X_prime
@@ -185,9 +181,8 @@ class ParEGO_C1():
             X_prime = best_performing(X_feasible, H, ref_dir)
             X_prime_squared = X_infease_scores_sorted[0:(N_max - len(X_prime))]
             X_prime_squared = X_prime_squared[:,:-1] # as it has feasibility scores on the end we take it off
-            # import pdb; pdb.set_trace()
+
             # if there are no feasible solutions the stack fails so ive included an if statement
-            # import pdb; pdb.set_trace()
             if len(X_prime) == 0:
                 return X_prime_squared
             else:
@@ -196,7 +191,6 @@ class ParEGO_C1():
         elif len(X_infeasible) < H and len(X_feasible) >= H:
             X_prime = X_infeasible
             the_other = best_performing(X_feasible, N_max - len(X_prime), ref_dir)
-            # import pdb; pdb.set_trace()
             return(np.vstack((X_prime, the_other)))
 
         elif len(X_infeasible) >= H and len(X_feasible) < H:
@@ -260,10 +254,6 @@ class ParEGO_C1():
                     upper[i] = max(ysample[:,i])
                     lower[i] = min(ysample[:,i])
 
-                # upper = self.max_point
-                # lower = self.ideal_point
-                # import pdb; pdb.set_trace()
-
                 # change the bounds of the scalarisation object
                 aggregation_func.set_bounds(lower, upper)
 
@@ -288,7 +278,6 @@ class ParEGO_C1():
                 S_infeasible = aggregated_samples[feasible_mask]
                 y_feasible = ysample[~feasible_mask]
                 y_infeasible = ysample[feasible_mask]
-                # import pdb; pdb.set_trace()
 
                 # stack information toegther so they can be found together
                 feasible_pairs = np.hstack((X_feasible, y_feasible, np.reshape(S_feasible, (-1,1))))
@@ -341,18 +330,14 @@ class ParEGO_C1():
 
                     # if there are infeasible solutions, calculate the infeasibility scores
                     # we need the max violaion of each constraint for XI
-                    
-                    # import pdb; pdb.set_trace()
                     # so this is find because you are passing contraint values to xi_single
                     workable = gsample[feasible_mask]
                     infeasibility_scores = [xi_single(x, v_max) for x in workable]
                     
                     # get x_star, 
                     x_star = None
-
                     if np.any(X_feasible): # if there is a feasible solution
                         x_star = feasible_pairs[np.argmin(feasible_pairs[:,-1])]
-                        # x_star = current_best_X
                     else:
                         # if there is no feasible solutions, all the solutions are infeasible (obviously)
                         # so you just pick the "best" feasibility score
@@ -377,15 +362,12 @@ class ParEGO_C1():
 
             
                 X_prime = self.select_subset(feasible_pairs, infeasible_pairs, ref_dir, N_max)
-                # print(len(X_prime))
-                # import pdb; pdb.set_trace
             
                 
                 
                 model_input = X_prime[:,:self.n_vars]
                 model_output = X_prime[:,-1]
                 # fit a model using the penalised aggragated samples and the subset of inputs.
-                # import pdb; pdb.set_trace()
                 model = GPy.models.GPRegression(model_input, np.reshape(model_output, (-1,1)), GPy.kern.Matern52(self.n_vars,ARD=True))
                 model.Gaussian_noise.variance.fix(0)
                 model.optimize(messages=False,max_f_eval=1000)
@@ -397,13 +379,9 @@ class ParEGO_C1():
                 next_X, _ = self._get_proposed(self._expected_improvement, model, current_best)
 
                 next_y = self._objective_function(problem, next_X)
-                # print(next_X)
-                # print(next_y)
-                # print(X_prime[0])
 
                 # add the new sample to archive.
                 ysample = np.vstack((ysample, next_y))
-                # print(len(ysample))
 
                 # Aggregate new sample
                 agg = aggregation_func(next_y, ref_dir)
@@ -415,8 +393,6 @@ class ParEGO_C1():
                 # add constraints to constraint archive
                 next_g = self._constraint_function(problem, next_X)
                 gsample = np.vstack((gsample, next_g))
-
-                # import pdb; pdb.set_trace()
 
                 # ###################################################
                 # X = np.asarray(np.arange(0, 8, 0.01))
@@ -623,9 +599,6 @@ class ParEGO_C2():
         else:
             idx = np.argmax(X_feasible[:,-1])
             return X_feasible[idx][-1]
-
-
-
     
     def xi(self, x):
         """
@@ -822,20 +795,12 @@ class ParEGO_C2():
                     upper[i] = max(ysample[:,i])
                     lower[i] = min(ysample[:,i])
 
-                # upper = self.max_point
-                # lower = self.ideal_point
-                # import pdb; pdb.set_trace()
-
                 # change the bounds of the scalarisation object
                 aggregation_func.set_bounds(lower, upper)
 
                 # calculate scalar fitness score
                 aggregated_samples = np.asarray([aggregation_func(i, ref_dir) for i in ysample]).flatten()
-                # best_index = np.argmin(aggregated_samples)
-
-                # current_best = aggregated_samples[best_index]
-                # current_best_X = Xsample[best_index]
-
+   
                 # identify X_feasible and X_infeasible
                 infease = gsample > 0
                 feasible_mask = np.zeros(len(infease), dtype=bool)
@@ -850,7 +815,6 @@ class ParEGO_C2():
                 S_infeasible = aggregated_samples[feasible_mask]
                 y_feasible = ysample[~feasible_mask]
                 y_infeasible = ysample[feasible_mask]
-                # import pdb; pdb.set_trace()
 
                 # stack information toegther so they can be found together
                 feasible_pairs = np.hstack((X_feasible, y_feasible, np.reshape(S_feasible, (-1,1))))
@@ -903,18 +867,16 @@ class ParEGO_C2():
 
                     # if there are infeasible solutions, calculate the infeasibility scores
                     # we need the max violaion of each constraint for XI
-                    
-                    # import pdb; pdb.set_trace()
+     
+
                     # so this is find because you are passing contraint values to xi_single
                     workable = gsample[feasible_mask]
                     infeasibility_scores = [xi_single(x, v_max) for x in workable]
                     
                     # get x_star, 
                     x_star = None
-
                     if np.any(X_feasible): # if there is a feasible solution
                         x_star = feasible_pairs[np.argmin(feasible_pairs[:,-1])]
-                        # x_star = current_best_X
                     else:
                         # if there is no feasible solutions, all the solutions are infeasible (obviously)
                         # so you just pick the "best" feasibility score
@@ -938,7 +900,7 @@ class ParEGO_C2():
 
                 feasible_pairs = np.hstack((X_feasible, y_feasible, g_feasible, np.reshape(S_feasible, (-1,1))))
                 infeasible_pairs = np.hstack((X_infeasible, y_infeasible, g_infeasible, np.reshape(S_infeasible, (-1,1))))
-                # import pdb; pdb.set_trace()
+
 
             
                 X_prime = self.select_subset(feasible_pairs, infeasible_pairs, ref_dir, N_max)
@@ -947,40 +909,30 @@ class ParEGO_C2():
                 model_input = X_prime[:,:self.n_vars]
                 model_output = X_prime[:,-1]
                 # fit a model using the penalised aggragated samples and the subset of inputs.
-                # import pdb; pdb.set_trace()
-                # import pdb; pdb.set_trace()
+
 
                 agg_model = GPy.models.GPRegression(model_input, np.reshape(model_output, (-1,1)), GPy.kern.Matern52(self.n_vars,ARD=True))
                 agg_model.Gaussian_noise.variance.fix(0)
                 agg_model.optimize(messages=False,max_f_eval=1000)
 
+                # train constraint functions
                 constraints = X_prime[:,self.n_vars+self.n_obj:-1]
                 constraint_models = []
                 n_constr = self.n_eq_constr+self.n_ieq_constr
                 for i in range(n_constr):
-                    # import pdb; pdb.set_trace()
                     model = GPy.models.GPRegression(model_input, np.reshape(constraints[:,i], (-1,1)), GPy.kern.Matern52(self.n_vars,ARD=True))
                     model.Gaussian_noise.variance.fix(0)
                     model.optimize(messages=False,max_f_eval=1000)
                     constraint_models.append(model)
-
-                # import pdb; pdb.set_trace()
-                
-                # okay where are we
-                # write the functions 
                 
                 
                 current_best = self.select_current_best(feasible_pairs, infeasible_pairs)
                 next_X, _ = self._get_proposed(self.consraint_ei, agg_model, constraint_models, current_best)
 
                 next_y = self._objective_function(problem, next_X)
-                # print(next_X)
-                # print(next_y)
-                # print(X_prime[0])
 
                 # add the new sample to archive.
                 ysample = np.vstack((ysample, next_y))
-                # print(len(ysample))
 
                 # Aggregate new sample
                 agg = aggregation_func(next_y, ref_dir)
@@ -993,7 +945,6 @@ class ParEGO_C2():
                 next_g = self._constraint_function(problem, next_X)
                 gsample = np.vstack((gsample, next_g))
 
-                # import pdb; pdb.set_trace()
 
                 ##################################################
                 # X = np.asarray(np.arange(0, 8, 0.01))

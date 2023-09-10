@@ -23,9 +23,11 @@ class MultiSurrogateOptimiser:
     Class that allows optimisation of multi-objective problems using a multi-surrogate methodology.
     This method creates multiple probabalistic models, one for each objective.
     Constraints not supported.
+    This is a generic implementation, so perfomance is limited when compared to specialised algorithms with
+    extra features.
 
     Param:
-        test_problem: problem to be solved. Defined via pymoo.
+        test_problem: problem to be solved.
         ideal_point: also known as the utopian point. is the smallest possible value of an objective vector
                 in the objective space.
         max_point: the upper boundary of the objective space. The upper boundary for an objective vector.
