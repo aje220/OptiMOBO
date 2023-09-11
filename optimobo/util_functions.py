@@ -373,13 +373,19 @@ def wfg(pl, ref_point):
     Algorithm for calculating the hypervolume of a set of points. Assumes minimisation.
     
     Params:
-        pl: set of points.
+        pl: set of objective vectors.
         ref_point: the coordinate from which to measure hypervolume, the reference point.
     
     """
     return sum([exclhv(pl, k, ref_point) for k in range(len(pl))])
 
 def exclhv(pl, k, ref_point):
+    """
+    Exclusive Hypervolume.
+    pl: set of objective vectors.
+    k: the index of the point in k that you wish to evaluate the exclusive hypervolume.
+    ref_point: the coordinate from which to measure hypervolume, the reference point.
+    """
     inclusive = inclhv(pl[k], ref_point)
     limit_set = limitset(pl, k)
     ls_hv = wfg(calc_pf(limit_set), ref_point)
@@ -398,9 +404,11 @@ def limitset(pl, k):
     return result
 
 def inclhv(p, ref_point):
-    # this works
-    # refPoint = [8, 9]
-    # print("p "+str(p))
+    """
+    Hypervolume of a single objective vector.
+    p, objective vector
+    ref_point: reference point from which to measure hypervolume.
+    """
     return np.product([np.abs(p[j] - ref_point[j]) for j in range(2)])
 
 
