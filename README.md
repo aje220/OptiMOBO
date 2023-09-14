@@ -1,15 +1,15 @@
 # OptiMOBO
 Solve multi-objective optimisation problems using multi-objective bayesian optimisation (MOBO).
 
-This repo is a toolbox for solving expensive to evaluate multi-objective problems. It contains implementations of MOBO methods.
-The methods include:
+This repo is a toolbox for solving expensive to evaluate multi-objective problems. It contains implementations of MOBO methods;
+the methods include:
 
  
-* **Mono-surrogate.** This uses a single model to optimise. Objective vectors are aggregated into a single scalar value and a Gaussian process is built upon the scalarised values.
-* **Multi-surrogate.** This method uses multiple models. One model for each objective. Multi-objective acquisition functions are used to identify new sample points.
+* **Generic Mono-surrogate.** This uses a single model to optimise. Objective vectors are aggregated into a single scalar value and a Gaussian process is built upon the scalarised values.
+* **Generic Multi-surrogate.** This method uses multiple models. One model for each objective. Multi-objective acquisition functions are used to identify new sample points.
 * **ParEGO.** A mono-surrogate method proposed in 2006. This uses evolutionary operators to converge.
 * **ParEGO-C1/C2.** Mono-surrogate methods that feature constraint handling.
-* **EMO.** Multi-surrogate method exploiting probability of improvement.
+* **EMO.** Multi-surrogate method implemented using Hypervolume-based PoI as an acquisition method.
 * **KEEP.** Extension of ParEGO that includes a second surrogate model to improve selection of sample points.
 
 The methods are written as classes.
@@ -131,7 +131,7 @@ Aside from the algorithms and scalarisations themselves this package includes im
 * **Inclusive Hypervolume** Calculate the inclusive hypervolume of an objective vector.
 * **Modified WFG:** A modified version of WFG that can break down a non-dominated space into cells and returns the coordinates of each cell (in the objective space).
 * **generate_latin_hypercube_samples** A method of producing latin hypercube samples in any ```n``` dimensional space.
-* **EHVI** 
+* **EHVI** The expected hypervolume improvement of an objective vector. 2D and crudely in 3D.
 * **Expected decomposition:** A perfomance measure that uses scalarisation functions to evaluate the performance of a decision vector.
 
 #### Experimental Parameters
@@ -142,7 +142,7 @@ Various experimental parameters can be customised:
 
 #### Visualisation
 By calling ```result.plot_pareto_front()``` from a result object method, the program will use matplotlib to display the objective space of the problem at after the final iteration.
-The hypervolume convergence can be displayed also. Calling ```result.plot_hv_convergence() will show how the hypervolume changes iteration to iteration.
+The hypervolume convergence can be displayed also. Calling ```result.plot_hv_convergence()``` will show how the hypervolume changes iteration to iteration.
 
 
 

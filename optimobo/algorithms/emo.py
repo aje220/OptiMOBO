@@ -49,85 +49,104 @@ class EMO:
         return problem.evaluate(x)
 
 
-    def decompose_into_cells(self, data_points, ref_point):
+    def decompose_into_cells(self, data_points):
         """
         This decomoposes the non-dominated space into cells.
         It returns an array of sets of coordinates, each having information
         on the upper and lower bound of each cell.
         """
-        if len(data_points) == 1:
-            data_points = np.vstack((data_points, ref_point))
-        def wfg(pl, ref_point):
+
+        def inclhv(p, ref_point):
             """
-            L. While et al. 
-            10.1109/TEVC.2010.2077298
-            Algorithm for calculating the hypervolume of a set of points. Assumes minimisation.
-            
-            Params:
-                pl: set of points.
-                ref_point: the coordinate from which to measure hypervolume, the reference point.
-            
+            Hypervolume of a single objective vector.
+            p, objective vector
+            ref_point: reference point from which to measure hypervolume.
             """
-
-            # return sum([exclhv(pl, k, ref_point) for k in range(len(pl))])
-            return [exclhv(pl, k, ref_point) for k in range(len(pl))]
+            return np.array([p, ref_point])
 
 
-        def exclhv(pl, k, ref_point):
-
-            limit_set = limitset(pl, k)
-            ls_hv = wfg(util_functions.calc_pf(limit_set), ref_point)
-            return limit_set
-            
         def limitset(pl, k):
             result = []
             for j in range(len(pl)-k-1):
                 aux = []
                 for (p, q) in zip(pl[k], pl[j+k+1]):
-                    res = min(p,q)
+                    res = max(p,q)
                     aux.append(res)
                 result.append(aux)
-            # result = [[max(p,q) for (p,q) in zip(pl[k], pl[j+k+1])] for j in range(len(pl)-k-1)]
             return result
 
-        def inclhv(p, ref_point):
+        def iterative(table):
+            """
+            Iterative WFG algorithm that produces bounds to create the cells that represent the 
+            non-dominated objective space.
+            """
+            stack = [] # tuples: front, index, inclusive HV, list of exclusive HVs
+            front = table
+            index = 0
+            excl= []
+            depth = 1
+            hv = 0
+            limi = []
 
-            return np.product([np.abs(p[j] - ref_point[j]) for j in range(self.n_obj)])
+            while depth > 0:
+                if index >= len(front): # all points have been processed
+                    hv = sum(excl)
+                    depth -= 1
+                    if depth > 0:
+                        front, index, incl, excl = stack.pop()
+                        lower = np.maximum(np.rot90(incl)[1], hv[1])
+                        hv[-1] = lower
+                        excl.append(hv)
 
-        # Sorting the coords makes understanding whats going on easier
+                        index += 1
+                else:
+                    point = front[index]
+                    incl = inclhv(point, self.ideal_point)
+                    limset = util_functions.calc_pf(limitset(front, index))
+                    if len(limset) == 0:
+                        excl.append(incl)
+                        index += 1
+                    else:
+                        limi.append(limset)
+                        stack.append((front, index, incl, excl))
+                        front = limset
+                        index = 0
+                        excl = []
+                        depth += 1
+            # import pdb; pdb.set_trace()
+            return excl
+
+        # Sorting the coords makes understanding whats going on easier,
+        # also makes it less efficient, work for the future to fix
         sorted_coordinates = sorted(data_points, key=lambda coord: coord[0])
+        
+        # Add a final coordinate at the end of sorted coords. this ensures the final cell is correct.
+        final_upper = np.zeros(self.n_obj)
+        final_upper[-1] = sorted_coordinates[-1][-1]
+        for i in range(0, len(sorted_coordinates[-1])-1):
+            final_upper[i] = max(sorted_coordinates[-1][i], self.max_point[i])
+        sorted_coordinates = np.vstack((sorted_coordinates, final_upper))
 
-        # Get the limitsets of the pareto set of the points
-        ss = np.asarray(wfg(sorted_coordinates, ref_point))
-        # import pdb; pdb.set_trace()
-
-        # The final limitset needs to be fixed to include the correct point, this is due to a limitation of the modified
-        # wfg algorithm
-        # I dont think i need to call calc_pf here???
-        ss[-1] = [[ref_point[0], util_functions.calc_pf(sorted_coordinates)[-1][0]]]
-
-        # We get the upper bounds of each cell
-        upperlower = [[sorted_coordinates[i], ss[i][0]] for i, _ in enumerate(ss)]
-
-        # Now in this loop we include the other coordinates for each cell
-        bbbb = []
-        asdff = []
-        for i in upperlower:
-            asdf = []
-            for j in i:
-                asdf.append([1,j[1]])
-                bbbb.append([1,j[1]])
-            asdff.append(asdf)
+        # Get bounds of the points.
+        ss = np.asarray(iterative(sorted_coordinates))
 
 
-        # stack the coordinates together
-        final = np.hstack((upperlower, asdff))
-        # We need to fix the final cell again.
-        final[-1][-1] = ref_point
-        return final#
 
-    
-    
+        # So the algorithm doesnt produce the bounds of the first cell but we can just construct it
+        # as we have the information available 
+        upper = np.zeros(self.n_obj)
+        upper[0] = sorted_coordinates[0][0]
+        for i in range(1, len(sorted_coordinates[0])):
+            upper[i] = max(sorted_coordinates[0][i], self.max_point[i])
+        
+        first = np.vstack((upper, self.ideal_point))
+        first = np.reshape(first, (1,2,2))
+
+        # Return the first cell stacked with the old cell, we remove the failed final cell. A 
+        # side effect of the modified algorithm.
+        return np.vstack((first, ss))[:-1]
+
+
     def hypervolume_improvement(self, query_point, P, ref_point):
         """
         query_point: objective vector to query:
@@ -135,6 +154,7 @@ class EMO:
         Returns the improvment in hypervolume from the inclusion of the query point
         into the set of objective values.
         """
+        # this works
         before = util_functions.wfg(P, ref_point)
         # import pdb; pdb.set_trace()
 
@@ -142,12 +162,28 @@ class EMO:
 
         after = util_functions.wfg(aggregated, ref_point)
         improvement = after - before 
-        # improvement = before - after 
-
+        exc = util_functions.exclhv(aggregated, len(P)-1, ref_point)
         if improvement > 0:
             return improvement
         else:
+            # print("CALL")
             return 0
+
+    def vol5(self, mu, lower, upper):
+        """
+        Given mu and some upper and lower bounds (of a cell), this function computes how much volume 
+        some coordinate (mu) takes up in the cell (if it does at all). Its caluclates the hypervolume
+        improvement when you sum this function over all cells.
+        """
+        valid = []
+        mask = upper > mu
+        if mask.all():
+            for j in range(self.n_obj):
+                valid.append(upper[j]-max(lower[j],mu[j]))
+        else:
+            return 0
+        return(np.prod(valid))
+
 
     def hypervolume_based_PoI(self,X, models, P, cells):
         """
@@ -167,50 +203,32 @@ class EMO:
         # mu2 = np.asarray([predictions[0][0][0][0], predictions[1][0][0][0]])
         # mu = [mu1, mu2]
         var = np.asarray([predictions[0][1][0][0], predictions[1][1][0][0]])
-        std = np.sqrt(var+1e-5)
+        std = np.sqrt(var+1e-5) # add some noise, otherwise it can throw lots of NaNs and makes optimisation very slow.
 
-
+        # compute the probability of improvement
         all_of_them = []
         for j, value in enumerate(cells):
             ppp = []
             for i in range(self.n_obj):
-                # import pdb; pdb.set_trace()
-
-                # xxx = norm.cdf(cells[j][3][i], loc=mu[i], scale=np.sqrt(var[i]+1e-5)) - norm.cdf(cells[j][0][i], loc=mu[i], scale=np.sqrt(var[i]+1e-5))
-                xxx = norm.cdf(cells[j][3][i], loc=mu[i], scale=std[i]) - norm.cdf(cells[j][0][i], loc=mu[i], scale=std[i])
-
-                # xxx = norm.cdf(cells[j][3][i]) - norm.cdf(cells[j][0][i])
-
+                # xxx = norm.cdf(cells[j][0][i]) - norm.cdf(cells[j][1][i])
+                xxx = norm.cdf(cells[j][0][i], loc=mu[i], scale=std[i]) - norm.cdf(cells[j][1][i], loc=mu[i], scale=std[i])
                 ppp.append(xxx)
             all_of_them.append(np.product(ppp))
         poi = sum(all_of_them)
-
-        def vol4(mu, lower, upper):
-            valid = []
-            for j in range(self.n_obj):
-                if upper[j] > mu[j]:
-                    valid.append(upper[j]-max(lower[j],mu[j]))
-                else:
-                    continue
-            if len(valid) == 0:
-                # print("CALLED")
-                return 0
-            else:
-                return np.prod(valid)
-
-
-        improvement = sum([vol4(mu, cells[i][3], cells[i][0]) for i, value in enumerate(cells)])
-        print(improvement)
-        print(poi)
-        print(poi*improvement)
+    
+        # Get the hypervolume improvement.
+        # The reason we use cells to compute improvement is because it means we only call the WFG algorithm once.
+        # WFG is very computationally expensive therefore we can improve performance.
+        improvement = sum([self.vol5(mu, cells[i][1], cells[i][0]) for i, value in enumerate(cells)])
+    
         return poi * improvement
 
 
     def get_proposed(self, function, P, cells, models):
         """
-        Function used to optimise the evaluation criterion.
+        Function that implements the optimisation of the acquisition function.
+        For EMO, this is Hypervolume based probability of improvement.
         """
-
         def obj(X):
             return -function(X, models, P, cells)
 
@@ -228,14 +246,14 @@ class EMO:
         # Initial samples.
         variable_ranges = list(zip(self.test_problem.xl, self.test_problem.xu))
         Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples, variable_ranges)
-        # Xsample = np.asarray([[0.8333625 ],[5.96804276],[1.51721302],[2.24009326],[4.94240056]])
-        
+
         # Evaluate inital samples.
         ysample = np.asarray([self._objective_function(problem, x) for x in Xsample])
 
         hypervolume_convergence = []
 
         for i in range(n_iterations):
+            print("Iteration")
 
             # Get hypervolume metric.
             ref_point = self.max_point
@@ -256,12 +274,9 @@ class EMO:
                 models.append(model)
 
             # Decompose the non-dominated space into cells and retrieve the bounds.
-            cells = self.decompose_into_cells(util_functions.calc_pf(ysample), self.ideal_point)
-
-            # optimse the criterion
+            cells = self.decompose_into_cells(util_functions.calc_pf(ysample))
             X_next, _ = self.get_proposed(self.hypervolume_based_PoI, ysample, cells, models)
             
-            print("XFOUND")
 
             # Evaluate the next input.
             y_next = self._objective_function(problem, X_next)
@@ -272,113 +287,8 @@ class EMO:
             # Update archive.
             Xsample = np.vstack((Xsample, X_next))
 
-            ###################################################
-            # X = np.asarray(np.arange(0, 8, 0.01))
-            # X = np.asarray([[x] for x in X])
-            # # Get the aggregation function outputs and objective values for plotting.
-            # Y = np.asarray([self._objective_function(problem, x) for x in X])
-            # fig = plt.figure(figsize=(11, 6))
-            # gs = GridSpec(nrows=2, ncols=2)
-
-            # ax0 = fig.add_subplot(gs[0, 0])
-            # ax0.grid(alpha=0.3)
-            # # import pdb; pdb.set_trace()
-            # model.plot(ax=ax0, plot_limits=[0.0,8.0])
-            # line = ax0.lines[0]
-            # line.set_color("green")
-            # fill = ax0.collections[0]
-            # fill.set_color("green")  # Set confidence bound color to light blue
-            # fill.set_alpha(0.3)
-            # scatter1 = ax0.plot(model.X, model.Y, '+', color="b", markersize=12, markerfacecolor='black', markeredgecolor='black',label="_nolegend_", zorder=30)
-            
-            # for collection in ax0.collections:
-            #     collection.set_color("green")
-            # # aggre = np.asarray([acquisition_func(y, ref_dir) for y in Y])
-
-            # lab = None
-            # ylimits = None
-            # position = None
-            # cols = None
-            # line_label = None
-            
-            # lab = "TCH"
-            # ylimits = (-0.5, 0.7)
-            # position = "lower left"
-            # cols=1
-            # line_label = r"True $g_{TCH}(x)$"
-
-            # true = ax0.plot(X, aggre, linestyle="--", color="green", label=line_label)
-            
-
-            # leg = ax0.legend(labels=["Data", r"$\mu$", r"$2*\sigma$", line_label, line_label])
-            # leg.legendHandles[0].set_color('black')
-            # leg.legendHandles[0].set_alpha(1.0)
-            # # leg.legendHandles[0].set_marker('+')
-
-            # handles, labels = ax0.get_legend_handles_labels()
-            # # Create a new handle with the desired marker style
-            # new_handle = plt.Line2D([], [], marker='+', linestyle='None', color='black')
-
-            # # Replace the original handle with the new handle
-            # handles[0] = new_handle
-
-            # # Create a new legend with the modified handles and labels
-            # ax0.legend(handles, labels, ncol=cols, loc=position)
-
-            # # Display the plot
-            # ax0.set_ylim(ylimits)
-            # # ax0.set_xlim(0.0,8.0)
-            # ax0.set_xlim(-0.1,8.2)
-
-            ###########
-            # ax1 = fig.add_subplot(gs[1, 0])
-            # plot_acquisition(X, [self.hypervolume_based_PoI(x, models, ysample, cells) for x in X], X_next)
-            # ax1.set_ylabel(lab)
-
-            # # ax1.set_xlim(0.0,8.0)
-            # ax1.set_xlim(-0.1,8.2)
-
-            # ax1.set_xlabel(r"$x$")
-            # ax1.legend()
-                
-            #     # plot_acquisition(X, [expected_decomposition(acquisition_func, models, ref_dir, [-1.7,-1.9], [3,3], PBI_min) for x in X], X_next)
-            
-            # plt.ylabel("EI over Tchebicheff")
-                    
-            # plt.legend()
-            # plt.xlabel("x")
-
-            # pf = util_functions.calc_pf(Y)
-            # # plt.subplot(1,2,2)
-            # # plt.scatter(ysample[5:,0], ysample[5:,1], color="red", marker="s", zorder=10, label="Solution")
-            # # plt.scatter(ysample[0:4,0], ysample[0:4,1], color="black", marker="x", zorder=5, label="Initial samples")
-            # # plt.plot(Y[:,0], Y[:,1], color="grey", alpha=0.7, zorder=-5, label="Objective space")
-            # # plt.plot(pf[:,0], pf[:,1], color="black", zorder=0, linewidth=2, label="Pareto front")
-            # # plt.xlabel(r"$f_1(x)$")
-            # # plt.ylabel(r"$f_2(x)$")
-            # # plt.grid(alpha=0.3)
-            # # plt.legend()
-
-            # # plt.show()
-            # ax2 = fig.add_subplot(gs[:, 1])
-            # pf = util_functions.calc_pf(Y)
-            # ax2.scatter(ysample[5:,0], ysample[5:,1], color="red", marker="s", zorder=10, label="Solution")
-            # ax2.scatter(ysample[0:4,0], ysample[0:4,1], color="black", marker="x", zorder=5, label="Initial samples")
-            # ax2.plot(Y[:,0], Y[:,1], color="grey", alpha=0.7, zorder=-5, label="Objective space")
-            # ax2.plot(pf[:,0], pf[:,1], color="black", zorder=0, linewidth=2, label="Pareto front")
-            # ax2.set_xlabel(r"$f_1(x)$")
-            # ax2.set_ylabel(r"$f_2(x)$")
-            # ax2.grid(alpha=0.3)
-            # ax2.legend()
-            # # plt.show()
-
-            # plt.show()
-
-
 
         pf_approx = util_functions.calc_pf(ysample)
-
-
         # Identify the inputs that correspond to the pareto front solutions.
         indicies = []
         for i, item in enumerate(ysample):
