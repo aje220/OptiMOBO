@@ -2,18 +2,13 @@ import numpy as np
 from scipy.optimize import differential_evolution
 from scipy.stats import norm
 from pymoo.indicators.hv import HV
+import GPy
 # from util_functions import EHVI, calc_pf, expected_decomposition
 # from . import util_functions
-import util_functions
-import result
-import GPy
+import optimobo.util_functions as util_functions
+import optimobo.result as result
 
 
-
-import matplotlib.pyplot as plt
-GPy.plotting.change_plotting_library('matplotlib')
-from matplotlib.gridspec import GridSpec
-from Bayesian_optimisation_util import plot_acquisition
 
 
 
@@ -23,7 +18,7 @@ class EMO:
     Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization. 
     J Glob Optim 60, 575-594 (2014). https://doi.org/10.1007/s10898-013-0118-2
 
-    EMO algorithm, WARNING: this takes ages to run.
+    EMO algorithm. Using Hypervolume based Probability of Improvement.
     Only works for 2D so far.
     
     """
@@ -89,12 +84,15 @@ class EMO:
             limi = []
 
             while depth > 0:
-                if index >= len(front): # all points have been processed
+                if index >= len(front):
                     hv = sum(excl)
                     depth -= 1
                     if depth > 0:
                         front, index, incl, excl = stack.pop()
-                        lower = np.maximum(np.rot90(incl)[1], hv[1])
+
+                        # this bit needs to be sorted to fix the algorithm for higher dimensions
+                        lower = np.maximum(np.rot90(incl)[-1], hv[-1])
+                        # lower = np.maximum(np.rot90(incl)[1], hv[1])
                         hv[-1] = lower
                         excl.append(hv)
 

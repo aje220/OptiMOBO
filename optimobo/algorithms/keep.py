@@ -3,14 +3,15 @@ from scipy.stats import norm
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.indicators.hv import HV
 import random
+import GPy
 # from pymoo.core.problem import ElementwiseProblem
 
 
 # from util_functions import EHVI, calc_pf, expected_decomposition
 # from . import util_functions
-import util_functions
-import result
-import GPy
+import optimobo.util_functions as util_functions
+import optimobo.result as result
+
 
 class KEEP():
     """

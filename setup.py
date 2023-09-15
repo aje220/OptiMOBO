@@ -1,5 +1,5 @@
 from pathlib import Path
-from setuptools import setup
+from setuptools import setup, find_packages
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
@@ -13,6 +13,6 @@ setup(
    long_description_content_type='text/markdown',
    author='aje220',
    author_email='aje220@exeter.ac.uk',
-   packages=['optimobo'],  #same as name
+   packages=find_packages(),  #same as name
    install_requires=['numpy>=1.20.0', 'pymoo>=0.6.0', 'pygmo>=2.0.0', 'scipy>=1.9.0', 'gpy>=1.10.0'], #external packages as dependencies
 )

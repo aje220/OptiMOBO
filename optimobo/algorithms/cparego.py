@@ -1,15 +1,15 @@
 import random
 import numpy as np
 from scipy.stats import norm
+from scipy.optimize import differential_evolution
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.indicators.hv import HV
-from scipy.optimize import differential_evolution
 import GPy
 
-import matplotlib.pyplot as plt
-GPy.plotting.change_plotting_library('matplotlib')
-from matplotlib.gridspec import GridSpec
-from Bayesian_optimisation_util import plot_acquisition
+# import matplotlib.pyplot as plt
+# GPy.plotting.change_plotting_library('matplotlib')
+# from matplotlib.gridspec import GridSpec
+# from Bayesian_optimisation_util import plot_acquisition
 
 
 # from pymoo.core.problem import ElementwiseProblem
@@ -17,8 +17,8 @@ from Bayesian_optimisation_util import plot_acquisition
 
 # from util_functions import EHVI, calc_pf, expected_decomposition
 # from . import util_functions
-import util_functions
-import result
+import optimobo.util_functions as util_functions
+import optimobo.result as result
 
 class ParEGO_C1():
     """

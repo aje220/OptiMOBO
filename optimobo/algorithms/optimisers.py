@@ -5,14 +5,15 @@ from scipy.stats import norm
 from scipy.optimize import differential_evolution
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.indicators.hv import HV
+import GPy
 # from pymoo.core.problem import ElementwiseProblem
 
 
 # from util_functions import EHVI, calc_pf, expected_decomposition
 # from . import util_functions
-import util_functions
-import result
-import GPy
+import optimobo.util_functions as util_functions
+import optimobo.result as result
+
 GPy.plotting.change_plotting_library('matplotlib')
 
 # from scalarisations import ExponentialWeightedCriterion, IPBI, PBI, Tchebicheff, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff

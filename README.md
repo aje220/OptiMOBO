@@ -141,14 +141,12 @@ Various experimental parameters can be customised:
 * Number of samples used from the multi-variate distributions (multi-surrogate)
 
 #### Visualisation
-By calling ```result.plot_pareto_front()``` from a result object method, the program will use matplotlib to display the objective space of the problem at after the final iteration.
+By calling ```result.plot_pareto_front()``` from a result object method, the program will use matplotlib to plot the objective space of the problem at after the final iteration.
 The hypervolume convergence can be displayed also. Calling ```result.plot_hv_convergence()``` will show how the hypervolume changes iteration to iteration.
 
 
 
 ## Requirements
-* numpy
-* scipy
-* pygmo
-* pymoo
-* gpy
+See requirements.txt.
+Due to a bug in GPy, an older version of numpy is required.
+You can downgrade with: ```pip install numpy==1.23.5```

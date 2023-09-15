@@ -11,8 +11,8 @@ import GPy
 
 # from util_functions import EHVI, calc_pf, expected_decomposition
 # from . import util_functions
-import util_functions
-import result
+import optimobo.util_functions as util_functions
+import optimobo.result as result
 
 class ParEGO():
     """
