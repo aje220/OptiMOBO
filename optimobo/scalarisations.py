@@ -1,4 +1,3 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -89,8 +88,8 @@ class Tchebicheff(Scalarisation):
     def _do(self, F, weights):
         F_prime = (np.asarray(F) - np.asarray(self.ideal_point)) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))
         if np.ndim(F) == 2:
-            hhh = np.max(weights * F_prime, axis=1)
-            return hhh
+            tch = np.max(weights * F_prime, axis=1)
+            return tch
         else:
             return np.max(weights * F_prime)
 
@@ -110,7 +109,7 @@ class AugmentedTchebicheff(Scalarisation):
         the addition of weakly Pareto optimal solutions. 
     """
     
-    def __init__(self, ideal_point, max_point, alpha=0.0001) -> None:
+    def __init__(self, ideal_point, max_point, alpha=0.0001):
         super().__init__(ideal_point, max_point)
         self.alpha = alpha
 
@@ -119,15 +118,18 @@ class AugmentedTchebicheff(Scalarisation):
         # obj = F
         obj = (np.asarray(F) - np.asarray(self.ideal_point)) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))
 
+
         if np.ndim(F) == 2:
-            v = np.abs(obj - self.ideal_point) * weights
+            # Minus zero as its the ideal point and we have already normalised, left here for completeness.
+            v = np.abs(obj - 0) * weights
             tchebi = v.max(axis=1) # add augemnted part to this
-            aug = np.sum(np.abs(obj - self.ideal_point), axis=1)
+            aug = np.sum(np.abs(obj - 0), axis=1)
             return tchebi + (self.alpha*aug)
+
         else:
-            v = np.abs(obj - self.ideal_point) * weights
-            tchebi = v.max(axis=0) # add augemnted part to this
-            aug = np.sum(np.abs(obj - self.ideal_point), axis=0)
+            v = np.abs(obj - 0) * weights
+            tchebi = np.max(v, axis=0) # add augemnted part to this
+            aug = np.sum(np.abs(obj - 0), axis=0)
             return tchebi + (self.alpha*aug)
     
 class ModifiedTchebicheff(Scalarisation):
@@ -143,9 +145,8 @@ class ModifiedTchebicheff(Scalarisation):
         alpha: influences inclusion of weakly Pareto optimal solutions.
     """
     
-    def __init__(self, ideal_point, max_point, alpha=0.0001):
+    def __init__(self, ideal_point, max_point, alpha=1):
         super().__init__(ideal_point, max_point)
-
         self.alpha = alpha
 
     def _do(self, F, weights):
@@ -155,23 +156,16 @@ class ModifiedTchebicheff(Scalarisation):
 
 
         if np.ndim(F) == 2:
-            left = np.abs(obj - self.ideal_point)
-            # left = np.abs(obj - self.ideal_point / (np.asarray(self.max_point) - np.asarray(self.ideal_point)))
-
-            right = self.alpha*(np.sum(np.abs(obj - self.ideal_point), axis=1))
-            # right = self.alpha*(np.sum(np.abs((obj - self.ideal_point) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))), axis=1))
-            # right = self.alpha*(np.sum(np.abs((obj - self.ideal_point) / (np.asarray(self.max_point) - np.asarray(self.ideal_point))), axis=1))
-
-
-            # total = (left + right)*weights
+            # Minus zero as its the ideal point and we have already normalised, left here for completeness.
+            left = np.abs(obj - 0)
+            right = self.alpha*(np.sum(np.abs(obj - 0), axis=1))
             total = (left + np.reshape(right, (-1,1)))*weights
-
             tchebi = total.max(axis=1)
-            # import pdb; pdb.set_trace()
             return tchebi
+
         else:
-            left = np.abs(obj - self.ideal_point)
-            right = self.alpha*(np.sum(np.abs(obj - self.ideal_point)))
+            left = np.abs(obj - 0)
+            right = self.alpha*(np.sum(np.abs(obj - 0)))
             total = (left + np.asarray(right))*weights
             tchebi = total.max(axis=0)
             return tchebi

@@ -6,11 +6,6 @@ from pymoo.indicators.hv import HV
 import GPy
 
 
-# from pymoo.core.problem import ElementwiseProblem
-
-
-# from util_functions import EHVI, calc_pf, expected_decomposition
-# from . import util_functions
 import optimobo.util_functions as util_functions
 import optimobo.result as result
 
@@ -133,7 +128,7 @@ class ParEGO():
         X_aux = X.reshape(1, -1)
         mu_x, sigma_x = model.predict(X_aux)
         # is the variance therefore we need the square root it
-        sigma_x = np.sqrt(sigma_x)
+        sigma_x = np.sqrt(sigma_x+1e-6)
         mu_x = mu_x[0]
         sigma_x = sigma_x[0]
 

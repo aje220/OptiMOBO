@@ -4,11 +4,7 @@ from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.indicators.hv import HV
 import random
 import GPy
-# from pymoo.core.problem import ElementwiseProblem
 
-
-# from util_functions import EHVI, calc_pf, expected_decomposition
-# from . import util_functions
 import optimobo.util_functions as util_functions
 import optimobo.result as result
 
@@ -79,7 +75,6 @@ class KEEP():
         parent1_index = None
 
         for i in range(2):
-            # import pdb; pdb.set_trace()
             idx = random.sample(range(1, len(pop)), 2)
             ind1 = idx[0]
             ind2 = idx[1]
@@ -96,7 +91,6 @@ class KEEP():
             if i == 0:
                 parent1_index = selected
 
-            # import pdb; pdb.set_trace()
             parents_pair[i] = pop[selected]
             pop = np.delete(pop, selected, 0)
         return parents_pair, parent1_index
@@ -127,7 +121,7 @@ class KEEP():
         X_aux = X.reshape(1, -1)
         mu_x, sigma_x = model.predict(X_aux)
         # is the variance therefore we need the square root it
-        sigma_x = np.sqrt(sigma_x)
+        sigma_x = np.sqrt(sigma_x+1e-6)
         mu_x = mu_x[0]
         sigma_x = sigma_x[0]
 
@@ -147,8 +141,6 @@ class KEEP():
         """
         EI = self._expected_improvement(X, scalarised_model, opt_value)
         pareto_pred = pareto_model.predict(np.asarray([X]))
-        # import pdb; pdb.set_trace()
-        # return np.dot(pareto_pred, EI)
         return pareto_pred[0][0]*EI
 
 

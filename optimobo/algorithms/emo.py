@@ -3,8 +3,7 @@ from scipy.optimize import differential_evolution
 from scipy.stats import norm
 from pymoo.indicators.hv import HV
 import GPy
-# from util_functions import EHVI, calc_pf, expected_decomposition
-# from . import util_functions
+
 import optimobo.util_functions as util_functions
 import optimobo.result as result
 
@@ -111,7 +110,6 @@ class EMO:
                         index = 0
                         excl = []
                         depth += 1
-            # import pdb; pdb.set_trace()
             return excl
 
         # Sorting the coords makes understanding whats going on easier,
@@ -154,7 +152,6 @@ class EMO:
         """
         # this works
         before = util_functions.wfg(P, ref_point)
-        # import pdb; pdb.set_trace()
 
         aggregated = np.vstack((P,query_point))
 
@@ -256,7 +253,6 @@ class EMO:
             # Get hypervolume metric.
             ref_point = self.max_point
             HV_ind = HV(ref_point=ref_point)
-            # import pdb; pdb.set_trace()
             hv = HV_ind(ysample)
             hypervolume_convergence.append(hv)
 

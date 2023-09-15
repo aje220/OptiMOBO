@@ -8,12 +8,13 @@ the methods include:
 * **Generic Mono-surrogate.** This uses a single model to optimise. Objective vectors are aggregated into a single scalar value and a Gaussian process is built upon the scalarised values.
 * **Generic Multi-surrogate.** This method uses multiple models. One model for each objective. Multi-objective acquisition functions are used to identify new sample points.
 * **ParEGO.** A mono-surrogate method proposed in 2006. This uses evolutionary operators to converge.
-* **ParEGO-C1/C2.** Mono-surrogate methods that feature constraint handling.
-* **EMO.** Multi-surrogate method implemented using Hypervolume-based PoI as an acquisition method.
-* **KEEP.** Extension of ParEGO that includes a second surrogate model to improve selection of sample points.
+* **ParEGO-C1/C2.** Mono-surrogate methods that feature constraint handling (see example for how to define constraints).
+* **EMO.** Multi-surrogate method, implemented using Hypervolume-based PoI as an acquisition method.
+* **KEEP.** An extension of ParEGO that includes a second surrogate model to improve selection of sample points.
 
 The methods are written as classes.
 They are designed to solve problems that inherit from the `Problem` class.
+Problems are defined by implementing the ```_evaluate()``` and ```_evaluate_constraints()``` methods.
 
 #### Examples 
 The following code defines a bi-objective problem, MyProblem, and uses multi-surrogate Bayesian optimisation (utilising Tchebicheff aggregation as an acquisition function) to solve.
@@ -49,35 +50,41 @@ Will return a Pareto set approximation:
 
 For a constrained problem the constraint functions are defined in a seperate method:
 ```python
+from optimobo.algorithms.cparego import ParEGO_C1
+from optimobo.problem import Problem
+import optimobo.scalarisations as sc
+
 class BNH(Problem):
-        
+
     def __init__(self):
-        super().__init__(n_var=2, n_obj=2, n_ieq_constr=2, vtype=float)
-        self.xl = np.zeros(self.n_var)
-        self.xu = np.array([5.0, 3.0])
+        super().__init__(n_var=2, 
+                        n_obj=2, 
+                        n_ieq_constr=2, 
+                        vtype=float)
+                        self.xl = np.zeros(self.n_var)
+                        self.xu = np.array([5.0, 3.0])
 
     def _evaluate(self, x, out, *args, **kwargs):
         f1 = 4 * x[:, 0] ** 2 + 4 * x[:, 1] ** 2
         f2 = (x[:, 0] - 5) ** 2 + (x[:, 1] - 5) ** 2
         out["F"] = [f1, f2]
-
+    
     def _evaluate_constraints(self, x, out, *args, **kwargs):
+
         g1 = (1 / 25) * ((x[:, 0] - 5) ** 2 + x[:, 1] ** 2 - 25)
         g2 = -1 / 7.7 * ((x[:, 0] - 8) ** 2 + (x[:, 1] + 3) ** 2 - 7.7)
         out["G"] = [g1, g2]
-
+        
 problem = BNH()
-optimi = ParEGO_C2(problem, [0,0],[150,55])
-
-out1 = optimi.solve(n_iterations=10, n_init_samples=30, aggregation_func=Tchebicheff([0,0],[150,55]))
-
-out1.plot_pareto_front()
+optimi = ParEGO_C2(problem, [0,0], [150,60])
+out = optimi.solve(n_iterations=10, n_init_samples=20, aggregation_func=sc.Tchebicheff([0,0], [150,60]))
+out.plot_pareto_front()
 plt.show()
 ```
 
 Will return:
 
-![DTLZ5](docs/media/DTLZ.png "DTLZ5 Pareto front approximation")
+![DTLZ5](docs/media/BNH_objective_space.png "BNH Pareto front approximation")
 
 
 
@@ -129,7 +136,7 @@ Aside from the algorithms and scalarisations themselves this package includes im
 * **WFG:** A function to calculate the hypervolume of a set of objective vectors.
 * **Exclusive Hypervolume** Calculate the exclusive hypervolume of an objective vector.
 * **Inclusive Hypervolume** Calculate the inclusive hypervolume of an objective vector.
-* **Modified WFG:** A modified version of WFG that can break down a non-dominated space into cells and returns the coordinates of each cell (in the objective space).
+* **Modified WFG:** A modified version of WFG that can break down a non-dominated space into cells and returns the coordinates of each cell (in the objective space). Currently only works in 2D.
 * **generate_latin_hypercube_samples** A method of producing latin hypercube samples in any ```n``` dimensional space.
 * **EHVI** The expected hypervolume improvement of an objective vector. 2D and crudely in 3D.
 * **Expected decomposition:** A perfomance measure that uses scalarisation functions to evaluate the performance of a decision vector.
@@ -142,11 +149,11 @@ Various experimental parameters can be customised:
 
 #### Visualisation
 By calling ```result.plot_pareto_front()``` from a result object method, the program will use matplotlib to plot the objective space of the problem at after the final iteration.
-The hypervolume convergence can be displayed also. Calling ```result.plot_hv_convergence()``` will show how the hypervolume changes iteration to iteration.
+The hypervolume convergence can be displayed also. Calling ```result.plot_hv_convergence()``` will plot how the hypervolume changes iteration to iteration.
 
 
 
 ## Requirements
 See requirements.txt.
 Due to a bug in GPy, an older version of numpy is required.
-You can downgrade with: ```pip install numpy==1.23.5```
+You can install the required version with: ```pip install numpy==1.23.5```

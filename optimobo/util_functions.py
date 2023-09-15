@@ -1,4 +1,3 @@
-
 import numpy as np
 from scipy import stats
 from pygmo import fast_non_dominated_sorting, hypervolume
@@ -11,11 +10,9 @@ def expected(X, models, agg_func, cache, weights):
     I remember now.
     This function was written to plot the landscapes of multi-surrogate problems.
    
-    It scalarises the predicted values at from the input x.
- 
+    It computes the expected improvement of a point using a scalarisation function as a
+    performance measure.
     """
-
-
     predicitions = []
     for i in models:
         # import pdb; pdb.set_trace()
@@ -27,7 +24,6 @@ def expected(X, models, agg_func, cache, weights):
     # Translate the samples to the correct position
     sample_values = change(predicitions, cache, dimensions)
     # the predictions are used to translate the samples.
-
     n_samples = len(sample_values)
 
 
@@ -331,40 +327,40 @@ def expected_decomposition(X, models, weights, agg_func, agg_function_min, cache
     return total
 
 
-def binary_tournament_selection_without_replacment(self, population, num_selections, model, opt_value):
-    """
-    Returns a nested array of pairs of selected parents.
-    """
-    pop = population
-    all_parents = []
-    for i in range(num_selections):
-        # print(len(pop))
-        parents_pair = [0,0]
-        for i in range(2):
-            if len(pop) < 3:
-                all_parents.append(pop)
-                return all_parents
-            # import pdb; pdb.set_trace()
-            idx = random.sample(range(1, len(pop)), 2)
-            ind1 = idx[0]
-            ind2 = idx[1]
-            selected = None
-            ind1_fitness = self._expected_improvement(pop[ind1], model, opt_value)
-            ind2_fitness = self._expected_improvement(pop[ind2], model, opt_value)
+# def binary_tournament_selection_without_replacment(self, population, num_selections, model, opt_value):
+#     """
+#     Returns a nested array of pairs of selected parents.
+#     """
+#     pop = population
+#     all_parents = []
+#     for i in range(num_selections):
+#         # print(len(pop))
+#         parents_pair = [0,0]
+#         for i in range(2):
+#             if len(pop) < 3:
+#                 all_parents.append(pop)
+#                 return all_parents
+#             # import pdb; pdb.set_trace()
+#             idx = random.sample(range(1, len(pop)), 2)
+#             ind1 = idx[0]
+#             ind2 = idx[1]
+#             selected = None
+#             ind1_fitness = self._expected_improvement(pop[ind1], model, opt_value)
+#             ind2_fitness = self._expected_improvement(pop[ind2], model, opt_value)
 
-            if ind1_fitness > ind2_fitness:
-                selected = ind1
-            else:
-                selected = ind2
+#             if ind1_fitness > ind2_fitness:
+#                 selected = ind1
+#             else:
+#                 selected = ind2
 
-            parent1 = pop[selected]
-            parents_pair[i] = parent1
-            pop = np.delete(pop, ind1, 0)
-            if len(pop) == 1 :
-                return all_parents
-                # import pdb; pdb.set_trace()
-        all_parents.append(parents_pair)
-    return all_parents
+#             parent1 = pop[selected]
+#             parents_pair[i] = parent1
+#             pop = np.delete(pop, ind1, 0)
+#             if len(pop) == 1 :
+#                 return all_parents
+#                 # import pdb; pdb.set_trace()
+#         all_parents.append(parents_pair)
+#     return all_parents
 
 def wfg(pl, ref_point):
     """
@@ -382,9 +378,10 @@ def wfg(pl, ref_point):
 def exclhv(pl, k, ref_point):
     """
     Exclusive Hypervolume.
-    pl: set of objective vectors.
-    k: the index of the point in k that you wish to evaluate the exclusive hypervolume.
-    ref_point: the coordinate from which to measure hypervolume, the reference point.
+    Params:
+        pl: set of objective vectors.
+        k: the index of the point in k that you wish to evaluate the exclusive hypervolume.
+        ref_point: the coordinate from which to measure hypervolume, the reference point.
     """
     inclusive = inclhv(pl[k], ref_point)
     limit_set = limitset(pl, k)
@@ -406,88 +403,115 @@ def limitset(pl, k):
 def inclhv(p, ref_point):
     """
     Hypervolume of a single objective vector.
-    p, objective vector
-    ref_point: reference point from which to measure hypervolume.
+    Params:
+        p, objective vector
+        ref_point: reference point from which to measure hypervolume.
     """
     return np.product([np.abs(p[j] - ref_point[j]) for j in range(2)])
 
 
 
+def decompose_into_cells(data_points, ideal_point, max_point, n_obj=2):
+    """
+    This decomoposes the non-dominated space into cells.
+    It returns an array of sets of coordinates, each having information
+    on the upper and lower bound of each cell. Only works in 2d minimisation cases.
+    Params:
+        data_points: objective vectors
+        ideal_point: lower bound of the objective space
+        max_point: upper_bound of the objective space
+        n_obj: number of objectives
+        
+    """
 
-def decompose_into_cells_3d(self, data_points, ref_point):
-        def wfg(pl, ref_point):
-            """
-            L. While et al. 
-            10.1109/TEVC.2010.2077298
-            Algorithm for calculating the hypervolume of a set of points. Assumes minimisation.
-            
-            Params:
-                pl: set of points.
-                ref_point: the coordinate from which to measure hypervolume, the reference point.
-            
-            """
-
-            # return sum([exclhv(pl, k, ref_point) for k in range(len(pl))])
-            return [exclhv(pl, k, ref_point) for k in range(len(pl))]
-
-
-        def exclhv(pl, k, ref_point):
-
-            limit_set = limitset(pl, k)
-            ls_hv = wfg(util_functions.calc_pf(limit_set), ref_point)
-            return limit_set
-            
-        def limitset(pl, k):
-            result = []
-            for j in range(len(pl)-k-1):
-                aux = []
-                for (p, q) in zip(pl[k], pl[j+k+1]):
-                    res = min(p,q)
-                    aux.append(res)
-                result.append(aux)
-            # result = [[max(p,q) for (p,q) in zip(pl[k], pl[j+k+1])] for j in range(len(pl)-k-1)]
-            return result
-
-        def inclhv(p, ref_point):
-
-            return np.product([np.abs(p[j] - ref_point[j]) for j in range(self.n_obj)])
-
-        # Sorting the coords makes understanding whats going on easier
-        sorted_coordinates = sorted(data_points, key=lambda coord: coord[0])
-
-        # Get the limitsets of the pareto set of the points
-        ss = np.asarray(wfg(util_functions.calc_pf(sorted_coordinates), ref_point))
-        # import pdb; pdb.set_trace()
-
-        # The final limitset needs to be fixed to include the correct point, this is due to a limitation of the modified
-        # wfg algorithm
-        # ss[-1] = [[ref_point[0], util_functions.calc_pf(sorted_coordinates)[-1][0]]]
-        ss[-1] = [[ref_point[0], util_functions.calc_pf(sorted_coordinates)[-1][0], util_functions.calc_pf(sorted_coordinates)[-1][1]]]
-        # import pdb; pdb.set_trace()
+    def inclhv_decomp(p, ref_point):
+        """
+        Hypervolume of a single objective vector.
+        p, objective vector
+        ref_point: reference point from which to measure hypervolume.
+        """
+        return np.array([p, ref_point])
 
 
-        # We get the upper bounds of each cell
-        upperlower = [[sorted_coordinates[i], ss[i][0]] for i, _ in enumerate(ss)]
+    def limitset_decomp(pl, k):
+        result = []
+        for j in range(len(pl)-k-1):
+            aux = []
+            for (p, q) in zip(pl[k], pl[j+k+1]):
+                res = max(p,q)
+                aux.append(res)
+            result.append(aux)
+        return result
 
-        # Now in this loop we include the other coordinates for each cell
-        new = upperlower
-        # bbbb = []
-        asdff = []
-        for i in upperlower:
-            asdf = []
-            for j in i:
-                asdf.append([1,j[1],j[2]])
-                # asdf.append([1,j[2]]) 
+    def iterative(table):
+        """
+        Iterative WFG algorithm that produces bounds to create the cells that represent the 
+        non-dominated objective space.
+        """
+        stack = [] # tuples: front, index, inclusive HV, list of exclusive HVs
+        front = table
+        index = 0
+        excl= []
+        depth = 1
+        hv = 0
+        limi = []
 
-                # print([1,j[1]])
-                # bbbb.append([1,j[1]])
-                # print(j)
-            asdff.append(asdf)
+        while depth > 0:
+            if index >= len(front):
+                hv = sum(excl)
+                depth -= 1
+                if depth > 0:
+                    front, index, incl, excl = stack.pop()
 
-        # import pdb; pdb.set_trace()
+                    # this bit needs to be sorted to fix the algorithm for higher dimensions
+                    lower = np.maximum(np.rot90(incl)[-1], hv[-1])
+                    # lower = np.maximum(np.rot90(incl)[1], hv[1])
+                    hv[-1] = lower
+                    excl.append(hv)
 
-        # stack the coordinates together
-        final = np.hstack((upperlower, asdff))
-        # We need to fix the final cell again.
-        final[-1][-1] = ref_point
-        return final
+                    index += 1
+            else:
+                point = front[index]
+                incl = inclhv_decomp(point, ideal_point)
+                limset = calc_pf(limitset_decomp(front, index))
+                if len(limset) == 0:
+                    excl.append(incl)
+                    index += 1
+                else:
+                    limi.append(limset)
+                    stack.append((front, index, incl, excl))
+                    front = limset
+                    index = 0
+                    excl = []
+                    depth += 1
+        return excl
+
+    # Sorting the coords makes understanding whats going on easier,
+    # also makes it less efficient, work for the future to fix
+    sorted_coordinates = sorted(data_points, key=lambda coord: coord[0])
+    
+    # Add a final coordinate at the end of sorted coords. this ensures the final cell is correct.
+    final_upper = np.zeros(n_obj)
+    final_upper[-1] = sorted_coordinates[-1][-1]
+    for i in range(0, len(sorted_coordinates[-1])-1):
+        final_upper[i] = max(sorted_coordinates[-1][i], max_point[i])
+    sorted_coordinates = np.vstack((sorted_coordinates, final_upper))
+
+    # Get bounds of the points.
+    ss = np.asarray(iterative(sorted_coordinates))
+
+
+
+    # So the algorithm doesnt produce the bounds of the first cell but we can just construct it
+    # as we have the information available 
+    upper = np.zeros(n_obj)
+    upper[0] = sorted_coordinates[0][0]
+    for i in range(1, len(sorted_coordinates[0])):
+        upper[i] = max(sorted_coordinates[0][i], max_point[i])
+    
+    first = np.vstack((upper, ideal_point))
+    first = np.reshape(first, (1,2,2))
+
+    # Return the first cell stacked with the old cell, we remove the failed final cell. A 
+    # side effect of the modified algorithm.
+    return np.vstack((first, ss))[:-1]
