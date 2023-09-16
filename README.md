@@ -77,7 +77,7 @@ class BNH(Problem):
         
 problem = BNH()
 optimi = ParEGO_C2(problem, [0,0], [150,60])
-out = optimi.solve(n_iterations=10, n_init_samples=20, aggregation_func=sc.Tchebicheff([0,0], [150,60]))
+out = optimi.solve(n_iterations=50, n_init_samples=20, aggregation_func=sc.Tchebicheff([0,0], [150,60]))
 out.plot_pareto_front()
 plt.show()
 ```
@@ -95,6 +95,14 @@ The output `results` is a object containing:
 * ```results.pf_ysample``` All evaluated solutions.
 * ```results.pf_xsample``` All inputs used in the search. 
 * ```results.hypervolume_convergence``` How the hypervolume changes from iteration to iteration.
+
+For algorithms with constraint handling more information is included:
+* ```results.pf_approx``` calculated from only feasible solutions.
+* ```results.pf_inputs``` calculated from only feasible solutions.
+* ```results.X_feasible``` and ```results.X_infeasible``` Solutions.
+* ```results.y_feasible``` and ```results.y_infeasible``` Objective vectors.
+
+#### Other information
 
 When calling the ```optimiser.solve``` function for a ```MonoSurrogateOptimiser``` object, an aggregation function must be defined.
 
@@ -132,7 +140,7 @@ Their contours can be seen here:
 ![ScalarisationContours](docs/media/scalarisations.png "Contours of the scalarisation functions, in 2D.")
 
 #### Utility Functions
-Aside from the algorithms and scalarisations themselves this package includes implementations of useful functions for example:
+Aside from the algorithms and scalarisations themselves this package includes implementations of useful functions. They are found in the util_functions file and include:
 * **WFG:** A function to calculate the hypervolume of a set of objective vectors.
 * **Exclusive Hypervolume** Calculate the exclusive hypervolume of an objective vector.
 * **Inclusive Hypervolume** Calculate the inclusive hypervolume of an objective vector.
@@ -145,7 +153,8 @@ Aside from the algorithms and scalarisations themselves this package includes im
 Various experimental parameters can be customised:
 * Number of iterations
 * Number of initial samples
-* Number of samples used from the multi-variate distributions (multi-surrogate)
+
+See the implementations of each algorithm for details.
 
 #### Visualisation
 By calling ```result.plot_pareto_front()``` from a result object method, the program will use matplotlib to plot the objective space of the problem at after the final iteration.

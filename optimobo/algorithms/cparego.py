@@ -383,15 +383,15 @@ class ParEGO_C1():
 
                 
         # the pf_approx is the pf of the feasible solutions
-        pf_approx = util_functions.calc_pf(feasible_pairs[:,self.n_vars:-1])
+        pf_approx = util_functions.calc_pf(y_feasible)
         # Find the inputs that correspond to the pareto front.
         indicies = []
-        for i, item in enumerate(ysample):
+        for i, item in enumerate(y_feasible):
             if item in pf_approx:
                 indicies.append(i)
-        pf_inputs = Xsample[indicies]
+        pf_inputs = y_feasible[indicies]
 
-        res = result.Res(pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, problem.n_obj, n_init_samples)
+        res = result.Constrained_Res(y_infeasible, y_feasible, X_infeasible, X_feasible, pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, problem.n_obj, n_init_samples)
 
         return res
 
@@ -839,14 +839,14 @@ class ParEGO_C2():
 
                 
         # the pf_approx is the pf of the feasible solutions
-        pf_approx = util_functions.calc_pf(feasible_pairs[:,self.n_vars:-1])
+        pf_approx = util_functions.calc_pf(y_feasible)
         # Find the inputs that correspond to the pareto front.
         indicies = []
-        for i, item in enumerate(ysample):
+        for i, item in enumerate(y_feasible):
             if item in pf_approx:
                 indicies.append(i)
-        pf_inputs = Xsample[indicies]
+        pf_inputs = y_feasible[indicies]
 
-        res = result.Res(pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, problem.n_obj, n_init_samples)
+        res = result.Constrained_Res(y_infeasible, y_feasible, X_infeasible, X_feasible, pf_approx, pf_inputs, ysample, Xsample, hypervolume_convergence, problem.n_obj, n_init_samples)
 
         return res
