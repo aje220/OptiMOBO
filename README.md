@@ -135,7 +135,7 @@ Options Include:
 * Angle Penalised Distance (APD)
 
 They are written so they can be used in any context.
-Their contours can be seen here:
+Their contours (with a weighting of `[0.5, 0.5]` and upper and lower bounds of `[-500, -450] [500, 1000]`) can be seen here:
 ![ScalarisationContours](docs/media/scalarisations.png "Contours of the scalarisation functions, in 2D.")
 
 #### Utility Functions
