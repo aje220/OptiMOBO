@@ -112,7 +112,7 @@ Can be installed via:
 
 `pip install optimobo`
 
-pygmo can struggle with windows, so if you are using windows using anaconda is recommended.
+pygmo can struggle with Microsoft Windows; if you are using Windows anaconda is recommended.
 
 ## Key Features
 
