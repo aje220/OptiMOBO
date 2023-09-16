@@ -1,20 +1,15 @@
 
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.gaussian_process import GaussianProcessRegressor
 from scipy.stats import qmc
 from scipy.stats import norm
 from scipy.optimize import differential_evolution
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.indicators.hv import HV
-# from pymoo.core.problem import ElementwiseProblem
-
-
-# from util_functions import EHVI, calc_pf, expected_decomposition
-# from . import util_functions
-import util_functions
-import result
 import GPy
+
+import optimobo.util_functions as util_functions
+import optimobo.result as result
+
 GPy.plotting.change_plotting_library('matplotlib')
 
 # from scalarisations import ExponentialWeightedCriterion, IPBI, PBI, Tchebicheff, WeightedNorm, WeightedPower, WeightedProduct, AugmentedTchebicheff, ModifiedTchebicheff
@@ -25,9 +20,11 @@ class MultiSurrogateOptimiser:
     Class that allows optimisation of multi-objective problems using a multi-surrogate methodology.
     This method creates multiple probabalistic models, one for each objective.
     Constraints not supported.
+    This is a generic implementation, so perfomance is limited when compared to specialised algorithms with
+    extra features.
 
     Param:
-        test_problem: problem to be solved. Defined via pymoo.
+        test_problem: problem to be solved.
         ideal_point: also known as the utopian point. is the smallest possible value of an objective vector
                 in the objective space.
         max_point: the upper boundary of the objective space. The upper boundary for an objective vector.
@@ -331,7 +328,7 @@ class MonoSurrogateOptimiser:
         return (data - np.min(data)) / (np.max(data) - np.min(data))
 
     
-    def solve(self, n_iterations=100, n_init_samples=5, aggregation_func=None):
+    def solve(self, aggregation_func, n_iterations=100, n_init_samples=5):
         """
         This function contains the main flow of the multi-objective optimisation algorithm. This function attempts
         to solve the MOP.
