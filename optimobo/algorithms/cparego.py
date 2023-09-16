@@ -190,11 +190,18 @@ class ParEGO_C1():
 
 
 
-    def solve(self, n_iterations=50, n_init_samples=5, aggregation_func=None, N_max=100):
+    def solve(self, aggregation_func, n_iterations=50, n_init_samples=5, N_max=100):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
         For each iteration, 10 sample points are discovered and evaluated, this means that less iterations are
         needed for convergence.
+
+        n_iterations: The termination condition for the algorithm.
+        n_init_samples: The number of initial samples.
+        aggregation_func: The aggregation function used to scalarise the multiple objective values.
+        N_max: the maximum number of data points used to construct the gaussian process model.
+            By limiting the reconstruction of the model to only the best N_max points we can improve
+            the speed of the algorithm. Useless datapoints dont have to be included.
 
         """
         self.aggregation_func = aggregation_func
@@ -350,18 +357,13 @@ class ParEGO_C1():
             
                 X_prime = self.select_subset(feasible_pairs, infeasible_pairs, ref_dir, N_max)
             
-                
-                
+            
                 model_input = X_prime[:,:self.n_vars]
                 model_output = X_prime[:,-1]
                 # fit a model using the penalised aggragated samples and the subset of inputs.
                 model = GPy.models.GPRegression(model_input, np.reshape(model_output, (-1,1)), GPy.kern.Matern52(self.n_vars,ARD=True))
                 model.Gaussian_noise.variance.fix(0)
                 model.optimize(messages=False,max_f_eval=1000)
-
-                
-
-                
 
                 next_X, _ = self._get_proposed(self._expected_improvement, model, current_best)
 
@@ -636,11 +638,18 @@ class ParEGO_C2():
 
 
 
-    def solve(self, n_iterations=100, n_init_samples=5, aggregation_func=None, N_max=100):
+    def solve(self, aggregation_func, n_iterations=10, n_init_samples=5, N_max=100):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
         For each iteration, 10 sample points are discovered and evaluated, this means that less iterations are
         needed for convergence.
+
+        n_iterations: The termination condition for the algorithm.
+        n_init_samples: The number of initial samples.
+        aggregation_func: The aggregation function used to scalarise the multiple objective values.
+        N_max: the maximum number of data points used to construct the gaussian process model.
+            By limiting the reconstruction of the model to only the best N_max points we can improve
+            the speed of the algorithm. Useless datapoints dont have to be included.
 
         """
         self.aggregation_func = aggregation_func

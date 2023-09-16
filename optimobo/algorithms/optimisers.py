@@ -328,7 +328,7 @@ class MonoSurrogateOptimiser:
         return (data - np.min(data)) / (np.max(data) - np.min(data))
 
     
-    def solve(self, n_iterations=100, n_init_samples=5, aggregation_func=None):
+    def solve(self, aggregation_func, n_iterations=100, n_init_samples=5):
         """
         This function contains the main flow of the multi-objective optimisation algorithm. This function attempts
         to solve the MOP.

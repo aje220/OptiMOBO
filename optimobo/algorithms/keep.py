@@ -144,9 +144,12 @@ class KEEP():
         return pareto_pred[0][0]*EI
 
 
-    def solve(self, n_iterations=100, n_init_samples=5, aggregation_func=None):
+    def solve(self, aggregation_func, n_iterations=100, n_init_samples=5):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
+        n_iterations: The termination condition for the algorithm.
+        n_init_samples: The number of initial samples.
+        aggregation_func: the aggregation_function/scalarisation function used to scalarise the objective values.
         """
 
         problem = self.test_problem

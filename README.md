@@ -6,8 +6,8 @@ the methods include:
 
  
 * **Generic Mono-surrogate.** This uses a single model to optimise. Objective vectors are aggregated into a single scalar value and a Gaussian process is built upon the scalarised values.
-* **Generic Multi-surrogate.** This method uses multiple models. One model for each objective. Multi-objective acquisition functions are used to identify new sample points.
-* **ParEGO.** A mono-surrogate method proposed in 2006. This uses evolutionary operators to converge.
+* **Generic Multi-surrogate.** This method uses multiple models, one model for each objective. Multi-objective acquisition functions are used to identify new sample points. Scalarisation functions can be exploited as multi-objective acquisition functions in this paradigm.
+* **ParEGO.** A mono-surrogate method proposed in 2006. This uses evolutionary operators to select new sample points.
 * **ParEGO-C1/C2.** Mono-surrogate methods that feature constraint handling (see example for how to define constraints).
 * **EMO.** Multi-surrogate method, implemented using Hypervolume-based PoI as an acquisition method.
 * **KEEP.** An extension of ParEGO that includes a second surrogate model to improve selection of sample points.
@@ -21,8 +21,8 @@ The following code defines a bi-objective problem, MyProblem, and uses multi-sur
 ```python
 import numpy as np
 import optimobo.scalarisations as sc
-import optimobo.optimisers as opti
-from pymoo.core.problem import ElementwiseProblem
+import optimobo.algorithms.optimisers as opti
+from optimobo.problem import ElementwiseProblem
 
 class MyProblem(ElementwiseProblem):
 
@@ -70,7 +70,6 @@ class BNH(Problem):
         out["F"] = [f1, f2]
     
     def _evaluate_constraints(self, x, out, *args, **kwargs):
-
         g1 = (1 / 25) * ((x[:, 0] - 5) ** 2 + x[:, 1] ** 2 - 25)
         g2 = -1 / 7.7 * ((x[:, 0] - 8) ** 2 + (x[:, 1] + 3) ** 2 - 7.7)
         out["G"] = [g1, g2]
@@ -89,11 +88,11 @@ Will return:
 
 
 
-The output `results` is a object containing:
-* ```results.pf_approx``` Solutions on the Pareto front approximation. 
-* ```results.pf_inputs``` The corresponding inputs to the solutions on the Pareto front.
-* ```results.pf_ysample``` All evaluated solutions.
-* ```results.pf_xsample``` All inputs used in the search. 
+The output of each of the ```(algorithm).solve()``` method is an object containing these attributes:
+* ```results.pf_approx``` Objective vectors on the Pareto front approximation. 
+* ```results.pf_inputs``` The corresponding inputs to the solutions on the Pareto front, the best performing solutions.
+* ```results.pf_ysample``` All evaluated solutions/objective vectors.
+* ```results.pf_xsample``` All inputs/solutions used in the search. 
 * ```results.hypervolume_convergence``` How the hypervolume changes from iteration to iteration.
 
 For algorithms with constraint handling more information is included:
@@ -104,18 +103,18 @@ For algorithms with constraint handling more information is included:
 
 #### Other information
 
-When calling the ```optimiser.solve``` function for a ```MonoSurrogateOptimiser``` object, an aggregation function must be defined.
+<!-- When calling the ```optimiser.solve``` function for a ```MonoSurrogateOptimiser``` object, an aggregation function must be defined. -->
 
-For a ```MultiSurrogateOptimiser``` object an aggregation function can be chosen as a convergence measure. However, if left default, the optimiser will use Expected Hypervolume Improvement (EHVI) to solve the problem.
+For a ```MultiSurrogateOptimiser``` object a scalarisation function can be chosen as a convergence measure. However, if left default, the optimiser will use Expected Hypervolume Improvement (EHVI) to solve the problem. It should be noted that EHVI only works in 2 and 3 (crudely) dimensions.
 
 ## Installation
 Can be installed via:
 
 `pip install optimobo`
 
+pygmo can struggle with windows, so if you are using windows using anaconda is recommended.
+
 ## Key Features
-#### Mono and multi-surrogate:
-Two optimisers based on differing methods. 
 
 #### Choice of acquisition/aggragation functions:
 In mono-surrogate MOBO, scalarisation functions are used to aggregate objective vectors in a single value that can be used by the optimsier.
@@ -147,7 +146,7 @@ Aside from the algorithms and scalarisations themselves this package includes im
 * **Modified WFG:** A modified version of WFG that can break down a non-dominated space into cells and returns the coordinates of each cell (in the objective space). Currently only works in 2D.
 * **generate_latin_hypercube_samples** A method of producing latin hypercube samples in any ```n``` dimensional space.
 * **EHVI** The expected hypervolume improvement of an objective vector. 2D and crudely in 3D.
-* **Expected decomposition:** A perfomance measure that uses scalarisation functions to evaluate the performance of a decision vector.
+* **Expected decomposition:** Scalarisation functions can be used as multi-objective acqusition functions. Scalarisation functions can be used as a performance measure, this quality can be exploited to measure the convergence of solution in the objective space. Optimising the expected decomposition of a problem can identify new sample points.
 
 #### Experimental Parameters
 Various experimental parameters can be customised:
@@ -159,8 +158,6 @@ See the implementations of each algorithm for details.
 #### Visualisation
 By calling ```result.plot_pareto_front()``` from a result object method, the program will use matplotlib to plot the objective space of the problem at after the final iteration.
 The hypervolume convergence can be displayed also. Calling ```result.plot_hv_convergence()``` will plot how the hypervolume changes iteration to iteration.
-
-
 
 ## Requirements
 See requirements.txt.
