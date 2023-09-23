@@ -105,7 +105,7 @@ For algorithms with constraint handling more information is included:
 
 <!-- When calling the ```optimiser.solve``` function for a ```MonoSurrogateOptimiser``` object, an aggregation function must be defined. -->
 
-For a ```MultiSurrogateOptimiser``` object a scalarisation function can be chosen as a convergence measure. However, if left default, the optimiser will use Expected Hypervolume Improvement (EHVI) to solve the problem. It should be noted that EHVI only works in 2 and 3 (crudely) dimensions.
+* For a ```MultiSurrogateOptimiser``` object a scalarisation function can be chosen as a convergence measure. However, if left default, the optimiser will use Expected Hypervolume Improvement (EHVI) to solve the problem. It should be noted that EHVI only works in 2 and 3 (crudely) dimensions.
 
 ## Installation
 Can be installed via:
