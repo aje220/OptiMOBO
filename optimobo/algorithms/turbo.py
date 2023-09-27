@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 
 
-class TuRBO():
+class TuRBO_1():
 
     def __init__(self, test_problem, ideal_point, max_point, batch_size):
         self.test_problem = test_problem
@@ -31,10 +31,12 @@ class TuRBO():
         self.aggregated_samples = np.zeros((0, 1))
         self.batch_size = batch_size
         self.n_cand = min(100*self.n_vars, 5000)
+        # self.n_cand = 100
+
 
         self.length_min = 0.5 ** 7
         self.length_max = 1.6
-        self.length_init = 0.8
+        self.length_init = 0.4
         self.length = self.length_init
         self.ref_dirs = get_reference_directions("das-dennis", self.n_obj, n_partitions=10)
 
@@ -74,8 +76,9 @@ class TuRBO():
 
         # plt.axvline(self.denormalise(lb), color="black")
         # plt.axvline(self.denormalise(ub), color="black")
+        # plt.axvline(self.denormalise(x_center[0]), color="red")
 
-
+        # import pdb; pdb.set_trace()
         # Draw a Sobolev sequence in [lb, ub]
         # qmc.Sobol(d=self.n_vars, scramble=True)
         sampler = qmc.Sobol(d=self.n_vars, scramble=False)
@@ -98,6 +101,7 @@ class TuRBO():
         # y_cand = GP.posterior_samples(np.reshape(X, (-1,1)), size=n_samples)
         y_cand = GP.posterior_samples(X_cand, size=self.batch_size)
 
+        # import pdb; pdb.set_trace()
         return X_cand, y_cand
 
 
@@ -273,6 +277,297 @@ class TuRBO():
             #     plt.ylabel('Sampled Values')
             #     plt.legend()
             #     plt.show()
+
+
+        pf_approx = util_functions.calc_pf(self.ysample)
+        # Identify the inputs that correspond to the pareto front solutions.
+        indicies = []
+        for i, item in enumerate(self.ysample):
+            if item in pf_approx:
+                indicies.append(i)
+        pf_inputs = self.Xsample[indicies]
+
+        res = result.Res(pf_approx, pf_inputs, self.ysample, self.Xsample, hypervolume_convergence, self.n_obj, n_init_samples)
+
+        return res
+
+
+class TuRBO_M(TuRBO_1):
+    """The TuRBO-m algorithm.
+
+    Parameters
+    ----------
+    f : function handle
+    lb : Lower variable bounds, numpy.array, shape (d,).
+    ub : Upper variable bounds, numpy.array, shape (d,).
+    n_init : Number of initial points *FOR EACH TRUST REGION* (2*dim is recommended), int.
+    max_evals : Total evaluation budget, int.
+    n_trust_regions : Number of trust regions
+    batch_size : Number of points in each batch, int.
+    verbose : If you want to print information about the optimization progress, bool.
+    use_ard : If you want to use ARD for the GP kernel.
+    max_cholesky_size : Largest number of training points where we use Cholesky, int
+    n_training_steps : Number of training steps for learning the GP hypers, int
+    min_cuda : We use float64 on the CPU if we have this or fewer datapoints
+    device : Device to use for GP fitting ("cpu" or "cuda")
+    dtype : Dtype to use for GP fitting ("float32" or "float64")
+
+    Example usage:
+        turbo5 = TurboM(f=f, lb=lb, ub=ub, n_init=n_init, max_evals=max_evals, n_trust_regions=5)
+        turbo5.optimize()  # Run optimization
+        X, fX = turbo5.X, turbo5.fX  # Evaluated points
+    """
+
+    def __init__(
+        self,
+        test_problem,
+        ideal_point,
+        max_point,
+        batch_size,
+        n_trust_regions
+        
+    ):
+        self.n_trust_regions = n_trust_regions
+        super().__init__(
+            test_problem=test_problem,
+            ideal_point=ideal_point,
+            max_point=max_point,
+            batch_size=batch_size,
+        )
+
+        self.succtol = 3
+        self.failtol = max(5, self.n_vars)
+
+        # Very basic input checks
+        
+
+        # Remember the hypers for trust regions we don't sample from
+        self.hypers = [{} for _ in range(self.n_trust_regions)]
+
+        # Initialize parameters
+        self._restart()
+
+    def _restart(self):
+        print("RESTART CALLED")
+        self._idx = np.zeros((0, 1), dtype=int)  # Track what trust region proposed what using an index vector
+        self.failcount = np.zeros(self.n_trust_regions, dtype=int)
+        self.succcount = np.zeros(self.n_trust_regions, dtype=int)
+        self.length = self.length_init * np.ones(self.n_trust_regions)
+
+    def _adjust_length(self, fX_next, i):
+        assert i >= 0 and i <= self.n_trust_regions - 1
+
+        fX_min = self.ysample[self._idx[:, 0] == i, 0].min()  # Target value
+        if fX_next.min() < fX_min - 1e-3 * math.fabs(fX_min):
+            self.succcount[i] += 1
+            self.failcount[i] = 0
+        else:
+            self.succcount[i] = 0
+            self.failcount[i] += len(fX_next)  # NOTE: Add size of the batch for this TR
+
+        if self.succcount[i] == self.succtol:  # Expand trust region
+            self.length[i] = min([2.0 * self.length[i], self.length_max])
+            self.succcount[i] = 0
+        elif self.failcount[i] >= self.failtol:  # Shrink trust region (we may have exceeded the failtol)
+            self.length[i] /= 2.0
+            self.failcount[i] = 0
+
+    def _select_candidates(self, X_cand, y_cand):
+        """Select candidates from samples from all trust regions."""
+        # assert X_cand.shape == (self.n_trust_regions, self.n_cand, self.n_vars)
+        assert y_cand.shape == (self.n_trust_regions, self.n_cand, self.batch_size)
+        assert X_cand.min() >= 0.0 and X_cand.max() <= 1.0 and np.all(np.isfinite(y_cand))
+
+        X_next = np.zeros((self.batch_size, self.n_vars))
+        idx_next = np.zeros((self.batch_size, 1), dtype=int)
+        for k in range(self.batch_size):
+            i, j = np.unravel_index(np.argmin(y_cand[:, :, k]), (self.n_trust_regions, self.n_cand))
+            assert y_cand[:, :, k].min() == y_cand[i, j, k]
+            X_next[k, :] = deepcopy(X_cand[i, j, :])
+            idx_next[k, 0] = i
+            assert np.isfinite(y_cand[i, j, k])  # Just to make sure we never select nan or inf
+
+            # Make sure we never pick this point again
+            y_cand[i, j, :] = np.inf
+
+        return X_next, idx_next
+
+    def solve(self, aggregation_func, max_evals, n_init_samples):
+        hypervolume_convergence = []
+
+        self.max_evals = max_evals
+        assert self.n_trust_regions > 1 and isinstance(max_evals, int)
+        assert self.max_evals > self.n_trust_regions * n_init_samples, "Not enough trust regions to do initial evaluations"
+        assert max_evals > self.batch_size, "Not enough evaluations to do a single batch"
+        """Run the full optimization process."""
+        # Create initial points for each TR
+        for i in range(self.n_trust_regions):
+
+            # Get init samples
+            variable_ranges = list(zip(self.test_problem.xl, self.test_problem.xu))
+            Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples, variable_ranges)
+            # Evaluate initial samples.
+            ysample = np.asarray([self._objective_function(self.test_problem, x) for x in Xsample])
+            aggregated_samples = np.asarray([aggregation_func(i, [0.5,0.5]) for i in ysample]).flatten()
+
+            # Update budget and set as initial data for this TR
+            self.n_evals = self.n_evals + n_init_samples
+            self._idx = np.vstack((self._idx, i * np.ones((n_init_samples, 1), dtype=int)))
+   
+            # self.Xsample = deepcopy(Xsample)
+            # self.ysample = deepcopy(ysample)
+            # self.aggregated_samples = np.reshape(aggregated_samples, (-1,1))
+
+            # Append new init to the global history
+            self.Xsample = np.vstack((self.Xsample, deepcopy(Xsample)))
+            self.ysample = np.vstack((self.ysample, deepcopy(ysample)))
+            self.aggregated_samples = np.vstack((self.aggregated_samples, np.reshape(deepcopy(aggregated_samples), (-1,1))))
+
+        # Thompson sample to get next suggestions
+        while self.n_evals < self.max_evals:
+
+            # Generate candidates from each TR
+            # import pdb; pdb.set_trace()
+            X_cand = np.zeros((self.n_trust_regions, self.n_cand, self.n_vars))
+            y_cand = np.inf * np.ones((self.n_trust_regions, self.n_cand, self.batch_size))
+            for i in range(self.n_trust_regions):
+                idx = np.where(self._idx == i)[0]  # Extract all "active" indices
+
+                Xsample_normed = self.normalise(self.Xsample[idx,:])
+
+                # Get local history
+                ysam = self.ysample[idx,:]
+                aggre = self.aggregated_samples[idx,:]
+                # import pdb; pdb.set_trace()
+
+                # Train model on the aggregated samples
+                print(len(Xsample_normed))
+                print(len(aggre))
+                GP = GPy.models.GPRegression(Xsample_normed, aggre, GPy.kern.Matern52(self.n_vars,ARD=True))
+                GP.Gaussian_noise.variance.fix(0)
+                GP.optimize(messages=False,max_f_eval=1000)
+
+                # Returns n=batch_size posterior samples (functions) from the GP, bounded by the trust region.
+                # y_cand are scalarised/aggregated values, not objective vectors.
+                # X_cand[i, :, :], y_cand[i, :, :] = self.create_candidates(
+                #     Xsample_normed, aggre, GP, length=self.length[i]
+                # )
+                # import pdb; pdb.set_trace()
+
+                X_cand_i, y_cand_i = self.create_candidates(
+                    Xsample_normed, aggre, GP, length=self.length[i]
+                )
+                X_cand[i, :, :] = X_cand_i
+                y_cand[i, :, :] = np.reshape(y_cand_i, (self.n_cand, self.batch_size))
+                # import pdb; pdb.set_trace()
+                print("HELLO")
+                
+
+
+            # Select the next candidates
+            X_next, idx_next = self._select_candidates(X_cand, y_cand)
+            assert X_next.min() >= 0.0 and X_next.max() <= 1.0
+
+            # Undo the warping
+            X_next = self.denormalise(X_next)
+            # X_next = from_unit_cube(X_next, self.lb, self.ub)
+
+            ref_dir = self.get_random_weight()
+            print(ref_dir)
+            y_next = np.array([self._objective_function(self.test_problem, x) for x in X_next])
+
+            aggregated_next = np.array([aggregation_func(y, ref_dir) for y in y_next])
+            # import pdb; pdb.set_trace()
+
+
+            # Update trust regions
+            for i in range(self.n_trust_regions):
+                idx_i = np.where(idx_next == i)[0]
+                if len(idx_i) > 0:
+                    self.hypers[i] = {}  # Remove model hypers
+                    fX_i = aggregated_next[idx_i]
+
+                    # if self.verbose and fX_i.min() < self.fX.min() - 1e-3 * math.fabs(self.fX.min()):
+                    #     n_evals, fbest = self.n_evals, fX_i.min()
+                    #     print(f"{n_evals}) New best @ TR-{i}: {fbest:.4}")
+                    #     sys.stdout.flush()
+                    self._adjust_length(fX_i, i)
+
+            # Update budget and append data
+            self.n_evals += self.batch_size
+            self.Xsample = np.vstack((self.Xsample, deepcopy(X_next)))
+            self.ysample = np.vstack((self.ysample, deepcopy(y_next)))
+            self.aggregated_samples = np.vstack((self.aggregated_samples, np.reshape(deepcopy(aggregated_next), (-1,1))))
+            self._idx = np.vstack((self._idx, deepcopy(idx_next)))
+
+            # Check if any TR needs to be restarted
+            for i in range(self.n_trust_regions):
+                if self.length[i] < self.length_min:  # Restart trust region if converged
+                    print("UPDA")
+
+                    idx_i = self._idx[:, 0] == i
+
+                    # if self.verbose:
+                    #     n_evals, fbest = self.n_evals, self.fX[idx_i, 0].min()
+                    #     print(f"{n_evals}) TR-{i} converged to: : {fbest:.4}")
+                    #     sys.stdout.flush()
+
+                    # Reset length and counters, remove old data from trust region
+                    self.length[i] = self.length_init
+                    self.succcount[i] = 0
+                    self.failcount[i] = 0
+                    self._idx[idx_i, 0] = -1  # Remove points from trust region
+                    self.hypers[i] = {}  # Remove model hypers
+
+                    # Create a new initial design
+                    Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples, variable_ranges)
+                    # Evaluate initial samples.
+                    ysample = np.asarray([self._objective_function(self.test_problem, x) for x in Xsample])
+                    aggregated_samples = np.asarray([aggregation_func(i, [0.5,0.5]) for i in ysample]).flatten()
+
+
+                    # Print progress
+                    # if self.verbose:
+                    #     n_evals, fbest = self.n_evals, fX_init.min()
+                    #     print(f"{n_evals}) TR-{i} is restarting from: : {fbest:.4}")
+                    #     sys.stdout.flush()
+
+                    # Append data to local history
+                    self.Xsample = np.vstack((self.Xsample, Xsample))
+                    self.ysample = np.vstack((self.ysample, ysample))
+                    self.aggregated_samples = np.vstack((self.aggregated_samples, np.reshape(aggregated_samples, (-1,1))))
+                    self._idx = np.vstack((self._idx, i * np.ones((n_init_samples, 1), dtype=int)))
+                    self.n_evals += n_init_samples
+        ##################################################################
+        #     import pdb; pdb.set_trace()
+        #     X = np.linspace(0,8)
+        #     X = np.asarray([[x] for x in X])
+        # # Y = np.asarray([self._objective_function(problem, x) for x in X])
+        #     # plt.figure(figsize=(10, 6))
+        #     for i in range(self.n_trust_regions):
+
+        #         for j in range(self.batch_size):
+        #         # plt.plot(X, y_cand[:,0,i], label=f'Sample {i+1}')
+        #             plt.scatter(self.denormalise(X_cand)[i], y_cand[i][:,j], label=f'Sample {i+1}')
+        #     # for i in range(3):
+        #     #     # plt.plot(X, y_cand[:,0,i], label=f'Sample {i+1}')
+        #     #     plt.plot(X, y_cand[:,0,i])
+        #     for i in X_next:
+        #         plt.axvline(i)
+
+
+        #     # plot the actual func
+
+        #     Y = np.array([self._objective_function(self.test_problem, x) for x in X])
+        #     aggre = np.array([aggregation_func(y, ref_dir) for y in Y])
+        #     plt.plot(X, aggre)
+
+        #     plt.scatter(X_next, aggregated_next)
+        #     plt.title('Sample Functions from Gaussian Process')
+        #     plt.xlabel('X')
+        #     plt.ylabel('Sampled Values')
+        #     plt.legend()
+        #     plt.show()
 
 
         pf_approx = util_functions.calc_pf(self.ysample)
