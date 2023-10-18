@@ -30,7 +30,7 @@ class MultiSurrogateOptimiser:
         max_point: the upper boundary of the objective space. The upper boundary for an objective vector.
     """
 
-    def __init__(self, test_problem, ideal_point, max_point):
+    def __init__(self, test_problem, ideal_point=None, max_point=None):
         self.test_problem = test_problem
         self.max_point = max_point
         self.ideal_point = ideal_point
@@ -292,7 +292,7 @@ class MonoSurrogateOptimiser:
             in the objective space.
     max_point: the upper boundary of the objective space. The upper boundary for an objective vector.
     """
-    def __init__(self, test_problem, ideal_point, max_point):
+    def __init__(self, test_problem, ideal_point=None, max_point=None):
         self.test_problem = test_problem
         # self.aggregation_func = aggregation_func
         self.max_point = max_point
@@ -393,6 +393,7 @@ class MonoSurrogateOptimiser:
             ysample, output objective vectors of all evaluated samples.
             Xsample, all samples that were evaluated.
         """
+
         
         # ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=12)
         problem = self.test_problem
@@ -407,7 +408,38 @@ class MonoSurrogateOptimiser:
         Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples, variable_ranges)
 
         # Evaluate inital samples.
+        
         ysample = np.asarray([self._objective_function(problem, x) for x in Xsample])
+        # if no bounds are set this sets the upper and lower bounds
+        if self.is_ideal_known is False and self.is_max_known is False:
+            upper = np.zeros(self.n_obj)
+            lower = np.zeros(self.n_obj)
+            for i in range(self.n_obj):
+                upper[i] = max(ysample[:,i])
+                lower[i] = min(ysample[:,i])
+            self.max_point = upper
+            self.ideal_point = lower
+            # change the bounds of the scalarisation object
+            aggregation_func.set_bounds(lower, upper)
+        elif self.is_ideal_known is False:
+            lower = np.zeros(self.n_obj)
+            for i in range(self.n_obj):
+                lower[i] = min(ysample[:,i])
+            self.ideal_point = lower
+            # change the bounds of the scalarisation object
+            aggregation_func.set_bounds(lower, self.max_point)
+        elif self.is_max_known is False: 
+            upper = np.zeros(self.n_obj)
+            for i in range(self.n_obj):
+                upper[i] = max(ysample[:,i])
+            self.max_point = upper
+            # change the bounds of the scalarisation object
+            aggregation_func.set_bounds(self.ideal_point, upper)
+        
+
+
+
+
         aggregated_samples = np.asarray([aggregation_func(i, weights) for i in ysample]).flatten()
         ys= np.reshape(aggregated_samples, (-1,1))
 

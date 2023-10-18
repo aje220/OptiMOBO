@@ -15,7 +15,7 @@ class ParEGO_C1():
     This algorithm is ParEGO-C1    
     """
 
-    def __init__(self, test_problem, ideal_point, max_point):
+    def __init__(self, test_problem, ideal_point=None, max_point=None):
         self.test_problem = test_problem
         self.aggregation_func = None
         self.max_point = max_point
@@ -225,13 +225,18 @@ class ParEGO_C1():
         # This will be filled at each iteration
         hypervolume_convergence = []
 
-        n_iters = budget//10
+        n_iters = budget//len(ref_dirs)
+        assert budget >= len(ref_dirs), "For "+str(self.n_obj)+" dimensions, the budget must be above "+str(len(ref_dirs))
 
         for i in range(n_iters):
 
 
+            # define some point for HV
+            upper = np.zeros(self.n_obj)
+            for i in range(self.n_obj):
+                upper[i] = max(ysample[:,i])
             # Hypervolume performance.
-            ref_point = self.max_point
+            ref_point = upper
             HV_ind = HV(ref_point=ref_point)
             hv = HV_ind(ysample)
             hypervolume_convergence.append(hv)
@@ -406,7 +411,7 @@ class ParEGO_C2():
     This algorithm is ParEGO-C2
     """
 
-    def __init__(self, test_problem, ideal_point, max_point):
+    def __init__(self, test_problem, ideal_point=None, max_point=None):
         self.test_problem = test_problem
         self.aggregation_func = None
         self.max_point = max_point
@@ -675,13 +680,17 @@ class ParEGO_C2():
         # This will be filled at each iteration
         hypervolume_convergence = []
 
-        n_iters = budget//10
+        n_iters = budget//len(ref_dirs)
+        assert budget >= len(ref_dirs), "For "+str(self.n_obj)+" dimensions, the budget must be above "+str(len(ref_dirs))
 
         for i in range(n_iters):
 
-
+            # define some point for HV
+            upper = np.zeros(self.n_obj)
+            for i in range(self.n_obj):
+                upper[i] = max(ysample[:,i])
             # Hypervolume performance.
-            ref_point = self.max_point
+            ref_point = upper
             HV_ind = HV(ref_point=ref_point)
             hv = HV_ind(ysample)
             hypervolume_convergence.append(hv)

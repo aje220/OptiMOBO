@@ -108,6 +108,8 @@ For algorithms with constraint handling more information is included:
 
 * For a ```MultiSurrogateOptimiser``` object a scalarisation function can be chosen as a convergence measure. However, if left default, the optimiser will use Expected Hypervolume Improvement (EHVI) to solve the problem. It should be noted that EHVI only works in 2 and 3 (crudely) dimensions.
 
+* The ideal point and max point (lower and upper bounds of the objective space) do not need to be defined, the optimisers can estimate via the pool of currently evaluated solutions. **BE WARNED**, this will mess up the hypervolume convergence metric if an upper bound is not defined; if an upper bound (max point) is not defined don't trust the hypervolume convergence graph.
+
 ## Installation
 Can be installed via:
 
