@@ -150,10 +150,11 @@ class KEEP():
         return pareto_pred[0][0]*EI
 
 
-    def solve(self, aggregation_func, n_iterations=100, n_init_samples=5):
+    def solve(self, aggregation_func, budget=100, n_init_samples=5):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
-        n_iterations: The termination condition for the algorithm.
+        budget: The termination condition for the algorithm. The number of expensive function evaluations,
+            not including initial samples.
         n_init_samples: The number of initial samples.
         aggregation_func: the aggregation_function/scalarisation function used to scalarise the objective values.
         """
@@ -173,7 +174,7 @@ class KEEP():
         hypervolume_convergence = []
 
 
-        for i in range(n_iterations):
+        for i in range(budget):
 
             # if no bounds are set this sets the upper and lower bounds
             if self.is_ideal_known is False and self.is_max_known is False:

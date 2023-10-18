@@ -145,10 +145,10 @@ class ParEGO():
         return ei.flatten() 
 
 
-    def solve(self, aggregation_func, n_iterations=100, n_init_samples=5):
+    def solve(self, aggregation_func, budget=100, n_init_samples=5):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
-        n_iterations: The termination condition for the algorithm.
+        budget: the number of expensive function evaluations used in the optimisation process, not including initial samples.
         n_init_samples: The number of initial samples.
         aggregation_func: the aggregation_function/scalarisation function used to scalarise the objective values.
         """
@@ -170,7 +170,7 @@ class ParEGO():
         hypervolume_convergence = []
 
 
-        for i in range(n_iterations):
+        for i in range(budget):
 
             # update the lower and upper bounds
             # these are used as the ideal and max points

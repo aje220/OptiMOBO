@@ -40,7 +40,7 @@ class MyProblem(ElementwiseProblem):
 
 problem = MyProblem()
 optimi = opti.MultiSurrogateOptimiser(problem, [0,0], [700,12])
-out = optimi.solve(n_iterations=100, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[700,12]))
+out = optimi.solve(budget=100, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[700,12]))
 out.plot_pareto_front()
 plt.show()
 ```
@@ -77,7 +77,7 @@ class BNH(Problem):
         
 problem = BNH()
 optimi = ParEGO_C2(problem, [0,0], [150,60])
-out = optimi.solve(n_iterations=50, n_init_samples=20, aggregation_func=sc.Tchebicheff([0,0], [150,60]))
+out = optimi.solve(sc.Tchebicheff([0,0], [150,60]), budget=50, n_init_samples=20)
 out.plot_pareto_front()
 plt.show()
 ```
@@ -151,7 +151,7 @@ Aside from the algorithms and scalarisations themselves this package includes im
 
 #### Experimental Parameters
 Various experimental parameters can be customised:
-* Number of iterations
+* Number of iterations/budget. How many expensive function evalutaions used in the optimisation process.
 * Number of initial samples
 
 See the implementations of each algorithm for details.

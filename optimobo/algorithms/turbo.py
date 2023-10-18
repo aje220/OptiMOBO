@@ -28,7 +28,7 @@ class TuRBO_1():
         self.upper = test_problem.xu
         self.lower = test_problem.xl
         self.n_evals = 0
-        self.max_evals = 100
+        self.budget = 100
         self.Xsample = np.zeros((0, self.n_vars))
         self.ysample = np.zeros((0, self.n_obj))
         self.aggregated_samples = np.zeros((0, 1))
@@ -155,7 +155,7 @@ class TuRBO_1():
     def get_random_weight(self):
         return self.ref_dirs[np.random.randint(0,len(self.ref_dirs))]
 
-    def solve(self, aggregation_func, max_evals=100, n_init_samples=5):
+    def solve(self, aggregation_func, budget=100, n_init_samples=5):
         """
         Main optimiser flow. 
         Aggregation func: scalarisation function used to scalarise the objective values
@@ -165,10 +165,10 @@ class TuRBO_1():
         
         """
 
-        self.max_evals = max_evals
+        self.budget = budget
         hypervolume_convergence = []
 
-        while self.n_evals < self.max_evals:
+        while self.n_evals < self.budget:
 
             ref_point = self.max_point
             HV_ind = HV(ref_point=ref_point)
@@ -205,7 +205,7 @@ class TuRBO_1():
             self.aggregated_samples = np.vstack((self.aggregated_samples, np.reshape(deepcopy(aggregated_samples), (-1,1))))
 
             
-            while self.n_evals < self.max_evals and self.length >= self.length_min:
+            while self.n_evals < self.budget and self.length >= self.length_min:
                 # Normalise inputs, this is needed as the candidate selection assumes normalisation.
                 Xsample_normed = self.normalise(self._Xsample)
 
@@ -382,13 +382,13 @@ class TuRBO_M(TuRBO_1):
 
         return X_next, idx_next
 
-    def solve(self, aggregation_func, max_evals, n_init_samples):
+    def solve(self, aggregation_func, budget, n_init_samples):
         hypervolume_convergence = []
 
-        self.max_evals = max_evals
-        assert self.n_trust_regions > 1 and isinstance(max_evals, int)
-        assert self.max_evals > self.n_trust_regions * n_init_samples, "Not enough trust regions to do initial evaluations"
-        assert max_evals > self.batch_size, "Not enough evaluations to do a single batch"
+        self.budget = budget
+        assert self.n_trust_regions > 1 and isinstance(budget, int)
+        assert self.budget > self.n_trust_regions * n_init_samples, "Not enough trust regions to do initial evaluations"
+        assert budget > self.batch_size, "Not enough evaluations to do a single batch"
         """Run the full optimization process."""
         # Create initial points for each TR
         for i in range(self.n_trust_regions):
@@ -415,7 +415,7 @@ class TuRBO_M(TuRBO_1):
             self.aggregated_samples = np.vstack((self.aggregated_samples, np.reshape(deepcopy(aggregated_samples), (-1,1))))
 
         # Thompson sample to get next suggestions
-        while self.n_evals < self.max_evals:
+        while self.n_evals < self.budget:
 
             # Generate candidates from each TR
             # import pdb; pdb.set_trace()

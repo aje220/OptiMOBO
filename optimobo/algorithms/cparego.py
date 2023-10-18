@@ -190,13 +190,13 @@ class ParEGO_C1():
 
 
 
-    def solve(self, aggregation_func, n_iterations=50, n_init_samples=5, N_max=100):
+    def solve(self, aggregation_func, budget=50, n_init_samples=5, N_max=100):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
         For each iteration, 10 sample points are discovered and evaluated, this means that less iterations are
         needed for convergence.
 
-        n_iterations: The termination condition for the algorithm.
+        budget: The termination condition for the algorithm.
         n_init_samples: The number of initial samples.
         aggregation_func: The aggregation function used to scalarise the multiple objective values.
         N_max: the maximum number of data points used to construct the gaussian process model.
@@ -225,7 +225,9 @@ class ParEGO_C1():
         # This will be filled at each iteration
         hypervolume_convergence = []
 
-        for i in range(n_iterations):
+        n_iters = budget//10
+
+        for i in range(n_iters):
 
 
             # Hypervolume performance.
@@ -638,13 +640,13 @@ class ParEGO_C2():
 
 
 
-    def solve(self, aggregation_func, n_iterations=10, n_init_samples=5, N_max=100):
+    def solve(self, aggregation_func, budget=10, n_init_samples=5, N_max=100):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
         For each iteration, 10 sample points are discovered and evaluated, this means that less iterations are
         needed for convergence.
 
-        n_iterations: The termination condition for the algorithm.
+        budget: The termination condition for the algorithm.
         n_init_samples: The number of initial samples.
         aggregation_func: The aggregation function used to scalarise the multiple objective values.
         N_max: the maximum number of data points used to construct the gaussian process model.
@@ -673,7 +675,9 @@ class ParEGO_C2():
         # This will be filled at each iteration
         hypervolume_convergence = []
 
-        for i in range(n_iterations):
+        n_iters = budget//10
+
+        for i in range(n_iters):
 
 
             # Hypervolume performance.

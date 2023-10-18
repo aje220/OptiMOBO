@@ -141,12 +141,12 @@ class MultiSurrogateOptimiser:
         return cached_samples
 
     
-    def solve(self, n_iterations=100, n_init_samples=5, sample_exponent=5, acquisition_func=None):
+    def solve(self, budget=100, n_init_samples=5, sample_exponent=5, acquisition_func=None):
         """
         This fcontains the main algorithm to solve the optimisation problem.
 
         Params:
-            n_iterations: the number of iterations 
+            budget: the number of expensive function evaluations used in the optimisation process, not including initial samples.
             
             display_pareto_front: bool. When set to true, a matplotlib plot will show the pareto front 
                 approximation discovered by the optimiser.
@@ -184,7 +184,7 @@ class MultiSurrogateOptimiser:
 
         hypervolume_convergence = []
 
-        for i in range(n_iterations):
+        for i in range(budget):
 
             # if no bounds are set this sets the upper and lower bounds
             if self.is_ideal_known is False and self.is_max_known is False:
@@ -370,13 +370,13 @@ class MonoSurrogateOptimiser:
         return (data - np.min(data)) / (np.max(data) - np.min(data))
 
     
-    def solve(self, aggregation_func, n_iterations=100, n_init_samples=5):
+    def solve(self, aggregation_func, budget=100, n_init_samples=5):
         """
         This function contains the main flow of the multi-objective optimisation algorithm. This function attempts
         to solve the MOP.
 
         Params:
-            n_iterations: the number of iterations 
+            budget: the number of expensive function evaluations used in the optimisation process, not including initial samples.
 
             display_pareto_front: bool. When set to true, a matplotlib plot will show the pareto front approximation discovered by the optimiser.
 
@@ -420,7 +420,8 @@ class MonoSurrogateOptimiser:
 
         ref_dirs = get_reference_directions("das-dennis", problem.n_obj, n_partitions=100)
         hypervolume_convergence = []
-        for i in range(n_iterations):
+
+        for i in range(budget):
 
             # if no bounds are set this sets the upper and lower bounds
             if self.is_ideal_known is False and self.is_max_known is False:

@@ -241,9 +241,11 @@ class EMO:
         return res.x, res.fun
 
 
-    def solve(self, n_iterations=100, n_init_samples=5):
+    def solve(self, budget=100, n_init_samples=5):
         """
-        This fcontains the main algorithm to solve the optimisation problem.
+        This function contains the main algorithm to solve the optimisation problem.
+        budget: the number of expensive function evaluations, does not include the initial samples
+        n_init_samples
         """
         problem = self.test_problem
 
@@ -256,7 +258,7 @@ class EMO:
 
         hypervolume_convergence = []
 
-        for i in range(n_iterations):
+        for i in range(budget):
             print("Iteration")
             
             # if no bounds are set this sets the upper and lower bounds
