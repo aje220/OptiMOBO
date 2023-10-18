@@ -11,6 +11,7 @@ the methods include:
 * **ParEGO-C1/C2.** Mono-surrogate methods that feature constraint handling (see example for how to define constraints).
 * **EMO.** Multi-surrogate method, implemented using Hypervolume-based PoI as an acquisition method.
 * **KEEP.** An extension of ParEGO that includes a second surrogate model to improve selection of sample points.
+* **Multi-objective TuRBO.** Designed for single objective high dimensional problems. It has been adapted for unconstrained multi-objective problems via the addition of a mono-surrogate method.
 
 The methods are written as classes.
 They are designed to solve problems that inherit from the `Problem` class.
@@ -91,8 +92,8 @@ Will return:
 The output of each of the ```(algorithm).solve()``` method is an object containing these attributes:
 * ```results.pf_approx``` Objective vectors on the Pareto front approximation. 
 * ```results.pf_inputs``` The corresponding inputs to the solutions on the Pareto front, the best performing solutions.
-* ```results.pf_ysample``` All evaluated solutions/objective vectors.
-* ```results.pf_xsample``` All inputs/solutions used in the search. 
+* ```results.ysample``` All evaluated solutions/objective vectors.
+* ```results.xsample``` All inputs/solutions used in the search. 
 * ```results.hypervolume_convergence``` How the hypervolume changes from iteration to iteration.
 
 For algorithms with constraint handling more information is included:
@@ -116,7 +117,7 @@ pygmo can struggle with Microsoft Windows; if you are using Windows anaconda is 
 
 ## Key Features
 
-#### Choice of acquisition/aggragation functions:
+#### Choice of acquisition/aggregation functions:
 In mono-surrogate MOBO, scalarisation functions are used to aggregate objective vectors in a single value that can be used by the optimsier.
 In multi-surrogate MOBO, scalarisation functions are used as convergence measures to select sample points.
 This package contains 10 scalarisation functions that can be used in the above mentioned contexts.

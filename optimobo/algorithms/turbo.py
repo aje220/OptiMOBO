@@ -15,8 +15,11 @@ import matplotlib.pyplot as plt
 
 
 class TuRBO_1():
+    """
+    https://doi.org/10.48550/arXiv.1910.01739
+    """
 
-    def __init__(self, test_problem, ideal_point, max_point, batch_size):
+    def __init__(self, test_problem, batch_size, ideal_point=None, max_point=None):
         self.test_problem = test_problem
         self.max_point = max_point
         self.ideal_point = ideal_point
@@ -42,6 +45,15 @@ class TuRBO_1():
 
         self.failtol = np.ceil(np.max([4.0 / batch_size, self.n_vars / batch_size]))
         self.succtol = 3
+
+        if ideal_point is None:
+            self.is_ideal_known = False
+        else:
+            self.is_ideal_known = True
+        if max_point is None:
+            self.is_max_known = False
+        else:
+            self.is_max_known = True
         
     def _objective_function(self, problem, x):
         """
@@ -293,31 +305,9 @@ class TuRBO_1():
 
 
 class TuRBO_M(TuRBO_1):
-    """The TuRBO-m algorithm.
-
-    Parameters
-    ----------
-    f : function handle
-    lb : Lower variable bounds, numpy.array, shape (d,).
-    ub : Upper variable bounds, numpy.array, shape (d,).
-    n_init : Number of initial points *FOR EACH TRUST REGION* (2*dim is recommended), int.
-    max_evals : Total evaluation budget, int.
-    n_trust_regions : Number of trust regions
-    batch_size : Number of points in each batch, int.
-    verbose : If you want to print information about the optimization progress, bool.
-    use_ard : If you want to use ARD for the GP kernel.
-    max_cholesky_size : Largest number of training points where we use Cholesky, int
-    n_training_steps : Number of training steps for learning the GP hypers, int
-    min_cuda : We use float64 on the CPU if we have this or fewer datapoints
-    device : Device to use for GP fitting ("cpu" or "cuda")
-    dtype : Dtype to use for GP fitting ("float32" or "float64")
-
-    Example usage:
-        turbo5 = TurboM(f=f, lb=lb, ub=ub, n_init=n_init, max_evals=max_evals, n_trust_regions=5)
-        turbo5.optimize()  # Run optimization
-        X, fX = turbo5.X, turbo5.fX  # Evaluated points
-    """
-
+    """The TuRBO-m algorithm. 	
+        https://doi.org/10.48550/arXiv.1910.01739
+   """
     def __init__(
         self,
         test_problem,
@@ -402,13 +392,14 @@ class TuRBO_M(TuRBO_1):
         """Run the full optimization process."""
         # Create initial points for each TR
         for i in range(self.n_trust_regions):
-
+            ref_dir = self.get_random_weight()
+            # ref_dir = [0.5,0.5]
             # Get init samples
             variable_ranges = list(zip(self.test_problem.xl, self.test_problem.xu))
             Xsample = util_functions.generate_latin_hypercube_samples(n_init_samples, variable_ranges)
             # Evaluate initial samples.
             ysample = np.asarray([self._objective_function(self.test_problem, x) for x in Xsample])
-            aggregated_samples = np.asarray([aggregation_func(i, [0.5,0.5]) for i in ysample]).flatten()
+            aggregated_samples = np.asarray([aggregation_func(i, ref_dir) for i in ysample]).flatten()
 
             # Update budget and set as initial data for this TR
             self.n_evals = self.n_evals + n_init_samples
