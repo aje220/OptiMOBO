@@ -30,6 +30,15 @@ class EMO:
         self.n_obj = test_problem.n_obj
         self.upper = test_problem.xu
         self.lower = test_problem.xl
+        # assert(self.n_obj == 2)
+        if ideal_point is None:
+            self.is_ideal_known = False
+        else:
+            self.is_ideal_known = True
+        if max_point is None:
+            self.is_max_known = False
+        else:
+            self.is_max_known = True
 
 
     def _objective_function(self, problem, x):
@@ -249,6 +258,29 @@ class EMO:
 
         for i in range(n_iterations):
             print("Iteration")
+            
+            # if no bounds are set this sets the upper and lower bounds
+            if self.is_ideal_known is False and self.is_max_known is False:
+                upper = np.zeros(self.n_obj)
+                lower = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    upper[i] = max(ysample[:,i])
+                    lower[i] = min(ysample[:,i])
+                self.max_point = upper
+                self.ideal_point = lower
+                # change the bounds of the scalarisation object
+            elif self.is_ideal_known is False:
+                lower = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    lower[i] = min(ysample[:,i])
+                self.ideal_point = lower
+                # change the bounds of the scalarisation object
+            elif self.is_max_known is False: 
+                upper = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    upper[i] = max(ysample[:,i])
+                self.max_point = upper
+                # change the bounds of the scalarisation object
 
             # Get hypervolume metric.
             ref_point = self.max_point
@@ -258,11 +290,10 @@ class EMO:
 
             # Create models for each objective.
             models = []
-            for i in range(problem.n_obj):
+            for i in range(self.n_obj):
                 ys = np.reshape(ysample[:,i], (-1,1))
                 model = GPy.models.GPRegression(Xsample,ys, GPy.kern.Matern52(self.n_vars,ARD=True))
-
-
+                
                 model.Gaussian_noise.variance.fix(0)
                 model.optimize(messages=False,max_f_eval=1000)
                 models.append(model)

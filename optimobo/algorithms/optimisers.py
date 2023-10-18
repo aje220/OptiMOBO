@@ -38,6 +38,14 @@ class MultiSurrogateOptimiser:
         self.n_obj = test_problem.n_obj
         self.upper = test_problem.xu
         self.lower = test_problem.xl
+        if ideal_point is None:
+            self.is_ideal_known = False
+        else:
+            self.is_ideal_known = True
+        if max_point is None:
+            self.is_max_known = False
+        else:
+            self.is_max_known = True
 
 
     def _objective_function(self, problem, x):
@@ -178,6 +186,32 @@ class MultiSurrogateOptimiser:
 
         for i in range(n_iterations):
 
+            # if no bounds are set this sets the upper and lower bounds
+            if self.is_ideal_known is False and self.is_max_known is False:
+                upper = np.zeros(self.n_obj)
+                lower = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    upper[i] = max(ysample[:,i])
+                    lower[i] = min(ysample[:,i])
+                self.max_point = upper
+                self.ideal_point = lower
+                # change the bounds of the scalarisation object
+                acquisition_func.set_bounds(lower, upper)
+            elif self.is_ideal_known is False:
+                lower = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    lower[i] = min(ysample[:,i])
+                self.ideal_point = lower
+                # change the bounds of the scalarisation object
+                acquisition_func.set_bounds(lower, self.max_point)
+            elif self.is_max_known is False: 
+                upper = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    upper[i] = max(ysample[:,i])
+                self.max_point = upper
+                # change the bounds of the scalarisation object
+                acquisition_func.set_bounds(self.ideal_point, upper)
+
             # Get hypervolume metric.
             ref_point = self.max_point
             HV_ind = HV(ref_point=ref_point)
@@ -267,6 +301,14 @@ class MonoSurrogateOptimiser:
         self.n_obj = test_problem.n_obj
         self.upper = test_problem.xu
         self.lower = test_problem.xl
+        if ideal_point is None:
+            self.is_ideal_known = False
+        else:
+            self.is_ideal_known = True
+        if max_point is None:
+            self.is_max_known = False
+        else:
+            self.is_max_known = True
 
 
     def _objective_function(self, problem, x):
@@ -379,6 +421,32 @@ class MonoSurrogateOptimiser:
         ref_dirs = get_reference_directions("das-dennis", problem.n_obj, n_partitions=100)
         hypervolume_convergence = []
         for i in range(n_iterations):
+
+            # if no bounds are set this sets the upper and lower bounds
+            if self.is_ideal_known is False and self.is_max_known is False:
+                upper = np.zeros(self.n_obj)
+                lower = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    upper[i] = max(ysample[:,i])
+                    lower[i] = min(ysample[:,i])
+                self.max_point = upper
+                self.ideal_point = lower
+                # change the bounds of the scalarisation object
+                aggregation_func.set_bounds(lower, upper)
+            elif self.is_ideal_known is False:
+                lower = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    lower[i] = min(ysample[:,i])
+                self.ideal_point = lower
+                # change the bounds of the scalarisation object
+                aggregation_func.set_bounds(lower, self.max_point)
+            elif self.is_max_known is False: 
+                upper = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    upper[i] = max(ysample[:,i])
+                self.max_point = upper
+                # change the bounds of the scalarisation object
+                aggregation_func.set_bounds(self.ideal_point, upper)
 
             # Hypervolume performance.
             ref_point = self.max_point
