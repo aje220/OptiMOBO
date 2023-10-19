@@ -122,7 +122,7 @@ pygmo can struggle with Microsoft Windows; if you are using Windows anaconda is 
 #### Choice of acquisition/aggregation functions:
 In mono-surrogate MOBO, scalarisation functions are used to aggregate objective vectors in a single value that can be used by the optimsier.
 In multi-surrogate MOBO, scalarisation functions are used as convergence measures to select sample points.
-This package contains 10 scalarisation functions that can be used in the above mentioned contexts.
+This package contains 12 scalarisation functions that can be used in the above mentioned contexts.
 Options Include:
 * Weighted Sum (WS)
 * Tchebicheff (TCH)
