@@ -11,6 +11,7 @@ the methods include:
 * **ParEGO-C1/C2.** Mono-surrogate methods that feature constraint handling (see example for how to define constraints).
 * **EMO.** Multi-surrogate method, implemented using Hypervolume-based PoI as an acquisition method.
 * **KEEP.** An extension of ParEGO that includes a second surrogate model to improve selection of sample points.
+* **Multi-objective TuRBO.** Designed for single objective high dimensional problems. It has been adapted for unconstrained multi-objective problems via the addition of a mono-surrogate method.
 
 The methods are written as classes.
 They are designed to solve problems that inherit from the `Problem` class.
@@ -39,7 +40,7 @@ class MyProblem(ElementwiseProblem):
 
 problem = MyProblem()
 optimi = opti.MultiSurrogateOptimiser(problem, [0,0], [700,12])
-out = optimi.solve(n_iterations=100, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[700,12]))
+out = optimi.solve(budget=100, n_init_samples=20, sample_exponent=3, acquisition_func=sc.Tchebicheff([0,0],[700,12]))
 out.plot_pareto_front()
 plt.show()
 ```
@@ -76,7 +77,7 @@ class BNH(Problem):
         
 problem = BNH()
 optimi = ParEGO_C2(problem, [0,0], [150,60])
-out = optimi.solve(n_iterations=50, n_init_samples=20, aggregation_func=sc.Tchebicheff([0,0], [150,60]))
+out = optimi.solve(sc.Tchebicheff([0,0], [150,60]), budget=50, n_init_samples=20)
 out.plot_pareto_front()
 plt.show()
 ```
@@ -91,8 +92,8 @@ Will return:
 The output of each of the ```(algorithm).solve()``` method is an object containing these attributes:
 * ```results.pf_approx``` Objective vectors on the Pareto front approximation. 
 * ```results.pf_inputs``` The corresponding inputs to the solutions on the Pareto front, the best performing solutions.
-* ```results.pf_ysample``` All evaluated solutions/objective vectors.
-* ```results.pf_xsample``` All inputs/solutions used in the search. 
+* ```results.ysample``` All evaluated solutions/objective vectors.
+* ```results.xsample``` All inputs/solutions used in the search. 
 * ```results.hypervolume_convergence``` How the hypervolume changes from iteration to iteration.
 
 For algorithms with constraint handling more information is included:
@@ -105,7 +106,9 @@ For algorithms with constraint handling more information is included:
 
 <!-- When calling the ```optimiser.solve``` function for a ```MonoSurrogateOptimiser``` object, an aggregation function must be defined. -->
 
-For a ```MultiSurrogateOptimiser``` object a scalarisation function can be chosen as a convergence measure. However, if left default, the optimiser will use Expected Hypervolume Improvement (EHVI) to solve the problem. It should be noted that EHVI only works in 2 and 3 (crudely) dimensions.
+* For a ```MultiSurrogateOptimiser``` object a scalarisation function can be chosen as a convergence measure. However, if left default, the optimiser will use Expected Hypervolume Improvement (EHVI) to solve the problem. It should be noted that EHVI only works in 2 and 3 (crudely) dimensions.
+
+* The ideal point and max point (lower and upper bounds of the objective space) do not need to be defined, the optimisers can estimate via the pool of currently evaluated solutions. **BE WARNED**, this will mess up the hypervolume convergence metric if an upper bound is not defined; if an upper bound (max point) is not defined don't trust the hypervolume convergence graph.
 
 ## Installation
 Can be installed via:
@@ -116,7 +119,7 @@ pygmo can struggle with Microsoft Windows; if you are using Windows anaconda is 
 
 ## Key Features
 
-#### Choice of acquisition/aggragation functions:
+#### Choice of acquisition/aggregation functions:
 In mono-surrogate MOBO, scalarisation functions are used to aggregate objective vectors in a single value that can be used by the optimsier.
 In multi-surrogate MOBO, scalarisation functions are used as convergence measures to select sample points.
 This package contains 10 scalarisation functions that can be used in the above mentioned contexts.
@@ -150,7 +153,7 @@ Aside from the algorithms and scalarisations themselves this package includes im
 
 #### Experimental Parameters
 Various experimental parameters can be customised:
-* Number of iterations
+* Number of iterations/budget. How many expensive function evalutaions used in the optimisation process.
 * Number of initial samples
 
 See the implementations of each algorithm for details.

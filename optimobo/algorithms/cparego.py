@@ -15,7 +15,7 @@ class ParEGO_C1():
     This algorithm is ParEGO-C1    
     """
 
-    def __init__(self, test_problem, ideal_point, max_point):
+    def __init__(self, test_problem, ideal_point=None, max_point=None):
         self.test_problem = test_problem
         self.aggregation_func = None
         self.max_point = max_point
@@ -190,13 +190,13 @@ class ParEGO_C1():
 
 
 
-    def solve(self, aggregation_func, n_iterations=50, n_init_samples=5, N_max=100):
+    def solve(self, aggregation_func, budget=50, n_init_samples=5, N_max=100):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
         For each iteration, 10 sample points are discovered and evaluated, this means that less iterations are
         needed for convergence.
 
-        n_iterations: The termination condition for the algorithm.
+        budget: The termination condition for the algorithm.
         n_init_samples: The number of initial samples.
         aggregation_func: The aggregation function used to scalarise the multiple objective values.
         N_max: the maximum number of data points used to construct the gaussian process model.
@@ -225,11 +225,18 @@ class ParEGO_C1():
         # This will be filled at each iteration
         hypervolume_convergence = []
 
-        for i in range(n_iterations):
+        n_iters = budget//len(ref_dirs)
+        assert budget >= len(ref_dirs), "For "+str(self.n_obj)+" dimensions, the budget must be above "+str(len(ref_dirs))
+
+        for i in range(n_iters):
 
 
+            # define some point for HV
+            upper = np.zeros(self.n_obj)
+            for i in range(self.n_obj):
+                upper[i] = max(ysample[:,i])
             # Hypervolume performance.
-            ref_point = self.max_point
+            ref_point = upper
             HV_ind = HV(ref_point=ref_point)
             hv = HV_ind(ysample)
             hypervolume_convergence.append(hv)
@@ -404,7 +411,7 @@ class ParEGO_C2():
     This algorithm is ParEGO-C2
     """
 
-    def __init__(self, test_problem, ideal_point, max_point):
+    def __init__(self, test_problem, ideal_point=None, max_point=None):
         self.test_problem = test_problem
         self.aggregation_func = None
         self.max_point = max_point
@@ -638,13 +645,13 @@ class ParEGO_C2():
 
 
 
-    def solve(self, aggregation_func, n_iterations=10, n_init_samples=5, N_max=100):
+    def solve(self, aggregation_func, budget=10, n_init_samples=5, N_max=100):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
         For each iteration, 10 sample points are discovered and evaluated, this means that less iterations are
         needed for convergence.
 
-        n_iterations: The termination condition for the algorithm.
+        budget: The termination condition for the algorithm.
         n_init_samples: The number of initial samples.
         aggregation_func: The aggregation function used to scalarise the multiple objective values.
         N_max: the maximum number of data points used to construct the gaussian process model.
@@ -673,11 +680,17 @@ class ParEGO_C2():
         # This will be filled at each iteration
         hypervolume_convergence = []
 
-        for i in range(n_iterations):
+        n_iters = budget//len(ref_dirs)
+        assert budget >= len(ref_dirs), "For "+str(self.n_obj)+" dimensions, the budget must be above "+str(len(ref_dirs))
 
+        for i in range(n_iters):
 
+            # define some point for HV
+            upper = np.zeros(self.n_obj)
+            for i in range(self.n_obj):
+                upper[i] = max(ysample[:,i])
             # Hypervolume performance.
-            ref_point = self.max_point
+            ref_point = upper
             HV_ind = HV(ref_point=ref_point)
             hv = HV_ind(ysample)
             hypervolume_convergence.append(hv)

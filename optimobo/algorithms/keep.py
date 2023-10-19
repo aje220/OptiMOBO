@@ -16,7 +16,7 @@ class KEEP():
     convergence.
     """
 
-    def __init__(self, test_problem, ideal_point, max_point):
+    def __init__(self, test_problem, ideal_point=None, max_point=None):
         self.test_problem = test_problem
         # self.aggregation_func = aggregation_func
         self.max_point = max_point
@@ -25,7 +25,14 @@ class KEEP():
         self.n_obj = test_problem.n_obj
         self.upper = test_problem.xu
         self.lower = test_problem.xl
-
+        if ideal_point is None:
+            self.is_ideal_known = False
+        else:
+            self.is_ideal_known = True
+        if max_point is None:
+            self.is_max_known = False
+        else:
+            self.is_max_known = True
 
     def mutate(self, solution_vector, mutation_rate):
 
@@ -129,8 +136,7 @@ class KEEP():
         ei = sigma_x * (gamma_x * norm.cdf(gamma_x) + norm.pdf(gamma_x))
         return ei.flatten() 
 
-
-    
+        
 
 
     def pareto_expected_improvement(self, X, pareto_model, scalarised_model, opt_value):
@@ -144,13 +150,16 @@ class KEEP():
         return pareto_pred[0][0]*EI
 
 
-    def solve(self, aggregation_func, n_iterations=100, n_init_samples=5):
+    def solve(self, aggregation_func, budget=100, n_init_samples=5):
         """
         Main flow for the algorithm. Call this to solve the specified problem.
-        n_iterations: The termination condition for the algorithm.
+        budget: The termination condition for the algorithm. The number of expensive function evaluations,
+            not including initial samples.
         n_init_samples: The number of initial samples.
         aggregation_func: the aggregation_function/scalarisation function used to scalarise the objective values.
         """
+
+
 
         problem = self.test_problem
         # Initial Latin Hypercube samples.
@@ -164,7 +173,35 @@ class KEEP():
         ref_dirs = get_reference_directions("das-dennis", problem.n_obj, n_partitions=100)
         hypervolume_convergence = []
 
-        for i in range(n_iterations):
+
+        for i in range(budget):
+
+            # if no bounds are set this sets the upper and lower bounds
+            if self.is_ideal_known is False and self.is_max_known is False:
+                upper = np.zeros(self.n_obj)
+                lower = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    upper[i] = max(ysample[:,i])
+                    lower[i] = min(ysample[:,i])
+                self.max_point = upper
+                self.ideal_point = lower
+                # change the bounds of the scalarisation object
+                aggregation_func.set_bounds(lower, upper)
+            elif self.is_ideal_known is False:
+                lower = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    lower[i] = min(ysample[:,i])
+                self.ideal_point = lower
+                # change the bounds of the scalarisation object
+                aggregation_func.set_bounds(lower, self.max_point)
+            elif self.is_max_known is False: 
+                upper = np.zeros(self.n_obj)
+                for i in range(self.n_obj):
+                    upper[i] = max(ysample[:,i])
+                self.max_point = upper
+                # change the bounds of the scalarisation object
+                aggregation_func.set_bounds(self.ideal_point, upper)
+            
 
             # Hypervolume performance.
             ref_point = self.max_point

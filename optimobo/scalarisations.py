@@ -10,7 +10,7 @@ class Scalarisation:
     It makes implementing the scalaristion functions easier too. When writing them I need to implement an __init__
     that only concerns the parameters used in that particular function.
     """
-    def __init__(self, ideal_point, max_point):
+    def __init__(self, ideal_point=None, max_point=None):
         self.ideal_point = ideal_point
         self.max_point = max_point
 
@@ -36,7 +36,7 @@ class Scalarisation:
 
 class WeightedSum(Scalarisation):
     
-    def __init__(self, ideal_point, max_point):
+    def __init__(self, ideal_point=None, max_point=None):
         super().__init__(ideal_point, max_point)
 
 
@@ -60,7 +60,7 @@ class Tchebicheff(Scalarisation):
         max_point: the upper boundary of the objective space. The upper boundary for an objective vector.
 
     """
-    def __init__(self, ideal_point, max_point):
+    def __init__(self, ideal_point=None, max_point=None):
         super().__init__(ideal_point, max_point)
 
     def _do(self, F, weights):
@@ -85,7 +85,7 @@ class AugmentedTchebicheff(Scalarisation):
         the addition of weakly Pareto optimal solutions. 
     """
     
-    def __init__(self, ideal_point, max_point, alpha=0.0001):
+    def __init__(self, ideal_point=None, max_point=None, alpha=0.0001):
         super().__init__(ideal_point, max_point)
         self.alpha = alpha
 
@@ -123,7 +123,7 @@ class ModifiedTchebicheff(Scalarisation):
         alpha: influences inclusion of weakly Pareto optimal solutions.
     """
     
-    def __init__(self, ideal_point, max_point, alpha=1):
+    def __init__(self, ideal_point=None, max_point=None, alpha=1):
         super().__init__(ideal_point, max_point)
         self.alpha = alpha
 
@@ -158,7 +158,7 @@ class ExponentialWeightedCriterion(Scalarisation):
         p: can influence performance.
     """
 
-    def __init__(self, ideal_point, max_point, p=100, **kwargs):
+    def __init__(self, ideal_point=None, max_point=None, p=100, **kwargs):
         super().__init__(ideal_point, max_point)
         self.p = p
 
@@ -182,7 +182,7 @@ class WeightedNorm(Scalarisation):
         p, infuences performance
     """
 
-    def __init__(self, ideal_point, max_point, p=3) -> None:
+    def __init__(self, ideal_point=None, max_point=None, p=3) -> None:
         super().__init__(ideal_point, max_point)
 
         self.p = p
@@ -205,7 +205,7 @@ class WeightedPower(Scalarisation):
         p: exponent, influences performance.
     """
 
-    def __init__(self, ideal_point, max_point, p=3):
+    def __init__(self, ideal_point=None, max_point=None, p=3):
         super().__init__(ideal_point, max_point)
         self.p = p
 
@@ -224,7 +224,7 @@ class WeightedProduct(Scalarisation):
     Can find solutions in non-convex problems.
     """
 
-    def __init__(self, ideal_point, max_point):
+    def __init__(self, ideal_point=None, max_point=None):
         super().__init__(ideal_point, max_point)
 
     def _do(self, F, weights):
@@ -249,7 +249,7 @@ class PBI(Scalarisation):
         theta: multiplier that effects performance.
     """
 
-    def __init__(self, ideal_point, max_point, theta=5):
+    def __init__(self, ideal_point=None, max_point=None, theta=5):
         super().__init__(ideal_point, max_point)
         self.theta = theta
 
@@ -284,7 +284,7 @@ class IPBI(Scalarisation):
         theta: multiplier that effects performance.
     """
 
-    def __init__(self, ideal_point, max_point, theta=5):
+    def __init__(self, ideal_point=None, max_point=None, theta=5):
         super().__init__(ideal_point, max_point)
         self.theta = theta
     
@@ -315,7 +315,7 @@ class QPBI(Scalarisation):
 
     # more testing required.
 
-    def __init__(self, ideal_point, max_point, theta=5, alpha=5.0, H=5.0) -> None:
+    def __init__(self, ideal_point=None, max_point=None, theta=5, alpha=5.0, H=5.0) -> None:
         super().__init__(ideal_point, max_point)
         self.theta = theta
         self.alpha = alpha
@@ -357,7 +357,7 @@ class APD(Scalarisation):
     Angle penalised distance, first shown in the RVEA multi-objective evolutionary algorithm.
     """
     
-    def __init__(self, ideal_point, max_point, FE=1, FE_max=10, gamma=0.010304664101210016):
+    def __init__(self, ideal_point=None, max_point=None, FE=1, FE_max=10, gamma=0.010304664101210016):
         super().__init__(ideal_point, max_point)
         self.FE = FE
         self.FE_max = FE_max
